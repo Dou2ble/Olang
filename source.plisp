@@ -2,7 +2,7 @@
 #      return value
 # }
 
-defn main() {
+# defn main() {
     var message String = "Hello, World"
     std.print(message)
-} 
+# } 

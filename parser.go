@@ -1,6 +1,8 @@
 package main
 
-import "errors"
+import (
+	"errors"
+)
 
 type Statement interface {
 	statement()
@@ -15,13 +17,13 @@ type Expression interface {
 }
 
 type StringLiteralExpression struct {
-	value []rune
+	value string
 }
 
 func (e StringLiteralExpression) expression() {}
 
 type MemberExpression struct {
-	property []rune
+	property string
 }
 
 func (e MemberExpression) expression() {}
@@ -34,8 +36,8 @@ type CallExpression struct {
 func (e CallExpression) expression() {}
 
 type VariableDeclaration struct {
-	id    []rune
-	_type []rune
+	id    string
+	_type string
 	expr  Expression
 }
 
@@ -99,7 +101,7 @@ func parseStatement(tokens []Token, i *int) (Statement, error) {
 	return VariableDeclaration{}, errors.New("No statement found")
 }
 
-func parse(source []rune) (Program, error) {
+func parse(source string) (Program, error) {
 	tokens := tokenize(source)
 	i := 0
 
@@ -108,7 +110,10 @@ func parse(source []rune) (Program, error) {
 	for ; i < len(tokens); i++ {
 		statement, err := parseStatement(tokens, &i)
 		if err != nil {
-			return program, err
+			// NOTE: in the future this should result in an error but right
+			// now this is fine because not all language features are supported yet
+			// return program, err
+			continue
 		}
 
 		program.content = append(program.content, statement)

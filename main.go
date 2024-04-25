@@ -1,5 +1,7 @@
 package main
 
+//go:generate go run generate.go
+
 import (
 	"fmt"
 	"io/ioutil"
@@ -8,40 +10,33 @@ import (
 )
 
 func main() {
-	// file, err := os.Open("source.plisp")
-
-	// if err != nil {
-	// 	slog.Error(fmt.Sprint(err))
-	// }
-	// defer file.Close()
-
-	// var source string
-	// scanner := bufio.NewScanner(file)
-	// for scanner.Scan() {
-	// 	source = scanner.Text()
-	// }
-	// if err := scanner.Err(); err != nil {
-	// 	slog.Error(fmt.Sprint(err))
-	// }
-
-	sourcePlisp, err := ioutil.ReadFile("source.plisp")
+	// read the source code
+	sourceRaw, err := ioutil.ReadFile("source.plisp")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
 	}
+	source := string(sourceRaw)
 
-	source := []rune(string(sourcePlisp))
-
+	// tokenize
 	tokens := tokenize(source)
-
 	for _, token := range tokens {
 		fmt.Println(token)
-		fmt.Println()
 	}
 
+	// parsing
 	ast, err := parse(source)
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 	}
 	fmt.Println(ast)
+
+	// compiling
+	csource, err := compile(source)
+	if err != nil {
+		slog.Error(fmt.Sprint(err))
+	}
+	fmt.Println()
+	fmt.Println("==> C SOURCE CODE")
+	fmt.Println(csource)
 }

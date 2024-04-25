@@ -26,10 +26,10 @@ var (
 
 type Token struct {
 	kind  TokenKind
-	value []rune
+	value string
 }
 
-func newToken(kind TokenKind, value []rune) Token {
+func newToken(kind TokenKind, value string) Token {
 	return Token{
 		kind:  kind,
 		value: value,
@@ -48,60 +48,53 @@ func isIdentifiable(r rune) bool {
 	return true
 }
 
-func tokenize(source []rune) []Token {
+func tokenize(source string) []Token {
 	// fmt.Println(isIdentifiable('('))
 	var (
 		tokens []Token
 		kind   TokenKind
-		value  []rune
+		value  string
 	)
 
 	for i := 0; i < len(source); i++ {
-		value = []rune{}
+		value = ""
 
 		// comments
 		if source[i] == '#' {
 			// continue to the next line
-			for ; source[i] != '\n'; i++ {
+			for ; i < len(source); i++ {
+				// a comment should end at a new line
+				if source[i] == '\n' {
+					break
+				}
 			}
-		}
-
-		// braces
-		if source[i] == '{' {
-			tokens = append(tokens, newToken(openBrace, []rune{'{'}))
+		} else if source[i] == '{' {
+			tokens = append(tokens, newToken(openBrace, "{"))
 		} else if source[i] == '}' {
-			tokens = append(tokens, newToken(closeBrace, []rune{'}'}))
-		}
-
-		// Parentheses
-		if source[i] == '(' {
-			tokens = append(tokens, newToken(openParentheses, []rune{'('}))
+			tokens = append(tokens, newToken(closeBrace, "}"))
+		} else if source[i] == '(' {
+			tokens = append(tokens, newToken(openParentheses, "("))
 		} else if source[i] == ')' {
-			tokens = append(tokens, newToken(closeParentheses, []rune{')'}))
-		}
-
-		// other single character tokens
-		if source[i] == ';' {
-			tokens = append(tokens, newToken(semiColon, []rune{';'}))
+			tokens = append(tokens, newToken(closeParentheses, ")"))
+		} else if source[i] == ';' {
+			tokens = append(tokens, newToken(semiColon, ";"))
 		} else if source[i] == '=' {
-			tokens = append(tokens, newToken(equalSign, []rune{'='}))
-		}
+			tokens = append(tokens, newToken(equalSign, "="))
+		} else if source[i] == '"' {
+			// String
 
-		// strings
-		if source[i] == '"' {
 			kind = tokenKindString
 			i++
 			for ; source[i] != '"'; i++ {
-				value = append(value, source[i])
+				value = value + string(source[i])
 			}
 			tokens = append(tokens, newToken(kind, value))
 			i++
-		}
+		} else if unicode.IsLetter(rune(source[i])) {
+			// Identifiers and some other stuff
 
-		// Types, Keywords and Identifiers
-		if unicode.IsLetter(source[i]) {
-			for ; isIdentifiable(source[i]); i++ {
-				value = append(value, source[i])
+			for ; isIdentifiable(rune(source[i])); i++ {
+				value = value + string(source[i])
 			}
 
 			// check if it is a keyword
@@ -115,7 +108,7 @@ func tokenize(source []rune) []Token {
 
 			if isKeyword {
 				kind = keyword
-			} else if unicode.IsUpper(value[0]) {
+			} else if unicode.IsUpper(rune(value[0])) {
 				kind = _type
 			} else {
 				kind = identifier
