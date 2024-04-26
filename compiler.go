@@ -48,12 +48,12 @@ func compile(source string) (string, error) {
 	}
 
 	// read the source code
-	rawFooter, err := ioutil.ReadFile("footer.c")
+	rawHeader, err := ioutil.ReadFile("header.c")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
 	}
-	cCode := string(rawFooter)
+	cCode := string(rawHeader)
 
 	// loop over the content of the abstract syntax tree
 	for i := 0; i < len(ast.content); i++ {

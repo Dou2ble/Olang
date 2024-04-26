@@ -35,13 +35,19 @@ type CallExpression struct {
 
 func (e CallExpression) expression() {}
 
+type ExpressionStatement struct {
+	expr Expression
+}
+
+func (s ExpressionStatement) expression() {}
+
 type VariableDeclaration struct {
 	id    string
 	_type string
 	expr  Expression
 }
 
-func (e VariableDeclaration) statement() {}
+func (s VariableDeclaration) statement() {}
 
 func parseExpression(tokens []Token, i *int) (Expression, error) {
 	if tokens[*i].kind == tokenKindString {
@@ -52,6 +58,8 @@ func parseExpression(tokens []Token, i *int) (Expression, error) {
 
 	return StringLiteralExpression{}, errors.New("Failed to parse expression")
 }
+
+func parseExpressionStatement(tokens []Token, i *int)
 
 func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclaration, error) {
 	if tokens[*i].kind != keyword || string(tokens[*i].value) != "var" {
