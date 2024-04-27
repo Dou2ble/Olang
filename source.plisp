@@ -1,8 +1,1 @@
-# defn var(value: Any) {
-#      return value
-# }
-
-# defn main() {
-    var message String = "Hello, World"
-    std.print(message)
-# } 
+printLine("Hello, World!")

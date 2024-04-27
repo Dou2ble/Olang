@@ -1,8 +1,9 @@
 //go:build ignore
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+
+#include <gc.h>
 
 typedef enum { PlispVariableKindString } PlispVariableKind;
 
@@ -12,11 +13,11 @@ typedef struct {
 } PlispVariable;
 
 PlispVariable* newPlispVariable(const PlispVariableKind kind, const void *value) {
-  PlispVariable* result = (PlispVariable*)malloc(sizeof(PlispVariable));
+  PlispVariable* result = (PlispVariable*)GC_MALLOC(sizeof(PlispVariable));
 
   switch (kind) {
   case PlispVariableKindString:;
-    char *allocatedString = (char *)malloc(strlen((const char*)value) + 1); // +1 for null terminator
+    char *allocatedString = (char *)GC_MALLOC(strlen((const char*)value) + 1); // +1 for null terminator
     if (allocatedString != NULL ) {
       strcpy(allocatedString, value);
       result->kind = PlispVariableKindString;
@@ -41,3 +42,7 @@ void function_print(PlispVariable *message) {
 void function_printLine(PlispVariable *message) {
   printf("%s\n", cString(message));
 }
+
+int main() {
+  GC_INIT()
+  

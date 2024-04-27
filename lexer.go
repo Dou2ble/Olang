@@ -89,7 +89,6 @@ func tokenize(source string) []Token {
 				value = value + string(source[i])
 			}
 			tokens = append(tokens, newToken(kind, value))
-			i++
 		} else if unicode.IsLetter(rune(source[i])) {
 			// Identifiers and some other stuff
 
