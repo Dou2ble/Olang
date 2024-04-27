@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Statement interface {
@@ -39,13 +38,29 @@ type ExpressionStatement struct {
 
 func (s ExpressionStatement) statement() {}
 
+type BlockStatement struct {
+	content []Statement
+}
+
+func (s BlockStatement) statement() {}
+
+type FunctionDeclaration struct {
+	id         string
+	parameters []string
+	body       BlockStatement
+}
+
+func (s FunctionDeclaration) statement() {}
+
 type VariableDeclaration struct {
 	id    string
 	_type string
 	expr  Expression
 }
 
-func (s VariableDeclaration) statement() {}
+func (s VariableDeclaration) statement() {
+
+}
 
 func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpression, error) {
 	result := StringLiteralExpression{}
@@ -104,11 +119,71 @@ func parseExpressionStatement(tokens []Token, i *int) (ExpressionStatement, erro
 
 	expression, err := parseExpression(tokens, i)
 	if err != nil {
-		fmt.Println("oh no")
 		return result, err
 	}
 
 	result.expr = expression
+	return result, nil
+}
+
+func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
+	result := BlockStatement{}
+
+	if tokens[*i].kind != openBrace {
+		return result, errors.New("Didn't find opening brace in block")
+	}
+	*i++
+
+	var content []Statement
+	for ; tokens[*i].kind != closeBrace; *i++ {
+		statement, err := parseStatement(tokens, i)
+		if err != nil {
+			return result, err
+		}
+
+		content = append(content, statement)
+	}
+	result.content = content
+
+	return result, nil
+}
+
+func parseFunctionDeclarationStatement(tokens []Token, i *int) (FunctionDeclaration, error) {
+	result := FunctionDeclaration{}
+
+	if tokens[*i].kind != keyword || string(tokens[*i].value) != "fn" {
+		return result, errors.New("Didn't find var keyword")
+	}
+	*i++
+
+	if tokens[*i].kind != identifier {
+		return result, errors.New("Didn't find function ID")
+	}
+	result.id = tokens[*i].value
+	*i++
+
+	if tokens[*i].kind != openParentheses {
+		return result, errors.New("Didn't find function ID")
+	}
+	*i++
+
+	var parameters []string
+	for ; tokens[*i].kind != closeParentheses; *i++ {
+		if tokens[*i].kind != identifier {
+			return result, errors.New("Parameter is not of token kind identifier")
+		}
+
+		parameters = append(parameters, tokens[*i].value)
+	}
+	*i++
+	result.parameters = parameters
+
+	body, err := parseBlockStatement(tokens, i)
+	if err != nil {
+		return result, err
+	}
+	result.body = body
+
 	return result, nil
 }
 
@@ -154,7 +229,11 @@ func parseStatement(tokens []Token, i *int) (Statement, error) {
 	if tokens[*i].kind == keyword {
 		if string(tokens[*i].value) == "var" {
 			return parseVariableDeclarationStatement(tokens, i)
+		} else if string(tokens[*i].value) == "fn" {
+			return parseFunctionDeclarationStatement(tokens, i)
 		}
+	} else if tokens[*i].kind == openBrace {
+		return parseBlockStatement(tokens, i)
 	}
 
 	// when no normal statement is found we should try to fall back to a expression statement

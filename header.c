@@ -43,6 +43,4 @@ void function_printLine(PlispVariable *message) {
   printf("%s\n", cString(message));
 }
 
-int main() {
-  GC_INIT()
   

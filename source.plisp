@@ -1,1 +1,12 @@
-printLine("Hello, World!")
+fn sendMessage(message) {
+   print("Message: ")
+   # printLine(message)
+}
+
+fn welcome() {
+   sendMessage("Welcome!")
+}
+
+fn main() {
+   welcome()
+}

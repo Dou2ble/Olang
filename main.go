@@ -35,6 +35,7 @@ func main() {
 	csource, err := compile(source)
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
+		os.Exit(1)
 	}
 	fmt.Println()
 	fmt.Println("==> C SOURCE CODE")

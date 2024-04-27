@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	keywords = [...]string{"var", "defn"}
+	keywords = [...]string{"var", "fn"}
 )
 
 type Token struct {

@@ -1,4 +1,7 @@
 //go:build ignore
 
-    return 0;
+int main() {
+  GC_INIT();
+  function_main();
+  return 0;
 }

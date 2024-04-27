@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log/slog"
 	"os"
 	"strings"
@@ -58,13 +57,49 @@ func compileExpressionStatement(statement ExpressionStatement) (string, error) {
 	return fmt.Sprintf("%s;\n", compiledExpression), nil
 }
 
+func compileBlockStatement(statement BlockStatement) (string, error) {
+	result := "{\n"
+
+	for _, statement := range statement.content {
+		compiledStatement, err := compileStatement(statement)
+		if err != nil {
+			return result, errors.New("Failed to parse statement inside of block")
+		}
+
+		result = result + compiledStatement
+	}
+
+	result = result + "\n};\n"
+	return result, nil
+}
+
+func compileFunctionDeclaration(statement FunctionDeclaration) (string, error) {
+	compiledBlock, err := compileBlockStatement(statement.body)
+	if err != nil {
+		return "", err
+	}
+
+	parametersString := ""
+	for i, parameter := range statement.parameters {
+		parametersString = parametersString + "PlispVaraible " + parameter
+		if i < len(statement.parameters)-1 {
+			parametersString = ", "
+		}
+	}
+
+	return fmt.Sprintf("\nvoid function_%s(%s) %s", statement.id, parametersString, compiledBlock), nil
+}
+
 func compileStatement(statement Statement) (string, error) {
 	switch statement := statement.(type) {
 	case VariableDeclaration:
 		return compileVariableDeclaration(statement)
 	case ExpressionStatement:
 		return compileExpressionStatement(statement)
-
+	case BlockStatement:
+		return compileBlockStatement(statement)
+	case FunctionDeclaration:
+		return compileFunctionDeclaration(statement)
 	}
 
 	return "", errors.New("Unknown statement type")
@@ -79,7 +114,7 @@ func compile(source string) (string, error) {
 	}
 
 	// read the header source code
-	rawHeader, err := ioutil.ReadFile("header.c")
+	rawHeader, err := os.ReadFile("header.c")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
@@ -98,7 +133,7 @@ func compile(source string) (string, error) {
 	}
 
 	// read the footer source ocde
-	rawFooter, err := ioutil.ReadFile("footer.c")
+	rawFooter, err := os.ReadFile("footer.c")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
