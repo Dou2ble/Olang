@@ -252,7 +252,9 @@ func parse(source string) (Program, error) {
 			// NOTE: in the future this should result in an error but right
 			// now this is fine because not all language features are supported yet
 			// return program, err
-			continue
+			// continue
+
+			return program, err
 		}
 
 		program.content = append(program.content, statement)
