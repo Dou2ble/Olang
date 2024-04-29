@@ -7,49 +7,49 @@
 
 #include <gc.h>
 
-typedef enum { OttoCVariableKindString OttoCVariableKindInteger } OttoCVariableKind;
+void panic(char *message) { printf("==> OttoC Panic: %s", message); }
+
+typedef enum {
+  OttoCVariableKindString,
+  OttoCVariableKindInteger
+} OttoCVariableKind;
 
 typedef struct {
   OttoCVariableKind kind;
   void *value;
 } OttoCVariable;
 
-OttoCVariable *newOttoCVariable(const OttoCVariableKind kind,
-                                const void *value) {
-  OttoCVariable *result = (OttoCVariable *)GC_MALLOC(sizeof(OttoCVariable));
+OttoCVariable newOttoCVariable(const OttoCVariableKind kind,
+                               const void *value) {
+  OttoCVariable result;
 
   switch (kind) {
   case OttoCVariableKindString:;
-    char *allocatedString = (char *)GC_MALLOC(strlen((const char*)value) + 1); // +1 for null terminator
-    if (allocatedString != NULL ) {
+    char *allocatedString = (char *)GC_MALLOC(strlen((const char *)value) +
+                                              1); // +1 for null terminator
+    if (allocatedString != NULL) {
       strcpy(allocatedString, value);
-      result->kind = OttoCVariableKindString;
-      result->value = allocatedString;
+      result.kind = OttoCVariableKindString;
+      result.value = allocatedString;
     } else {
-      return NULL;
+      panic("Failed to allocate memory to variable");
     }
-
-    return result;
 
   case OttoCVariableKindInteger:;
     int64_t *allocatedInteger = (int64_t *)GC_MALLOC(sizeof(int64_t));
-    if (allocatedString != NULL ) {
+    if (allocatedString != NULL) {
       allocatedInteger = (int64_t *)value;
-      result->kind = OttoCVariableKindInteger;
-      result->value = allocatedInteger;
-    } else {
-      return NULL;
+      result.kind = OttoCVariableKindInteger;
+      result.value = allocatedInteger;
     }
-
-    return result; 
   }
 
-  return NULL;
+  return result;
 };
 
-const char *cString(OttoCVariable *string) { return string->value; }
+const char *cString(OttoCVariable string) { return string.value; }
 
-void function_print(OttoCVariable *message) { printf("%s", cString(message)); }
+void function_print(OttoCVariable message) { printf("%s", cString(message)); }
 
 void function_printLine(OttoCVariable *message) {
   printf("%s\n", cString(message));
