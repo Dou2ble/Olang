@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+func compileBooleanLiteralExpression(expression BooleanLiteralExpression) (string, error) {
+	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindBoolean, %t)", expression.value), nil
+}
+
 func compileStringLiteralExpression(expression StringLiteralExpression) (string, error) {
 	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindString, \"%s\")", expression.value), nil
 }
@@ -34,6 +38,8 @@ func compileIdentifierExpression(expression IdentifierExpression) (string, error
 
 func compileExpression(expression Expression) (string, error) {
 	switch expression := expression.(type) {
+	case BooleanLiteralExpression:
+		return compileBooleanLiteralExpression(expression)
 	case StringLiteralExpression:
 		return compileStringLiteralExpression(expression)
 	case CallExpression:
@@ -51,7 +57,7 @@ func compileVariableDeclaration(statement VariableDeclaration) (string, error) {
 		return compiledExpression, err
 	}
 
-	return fmt.Sprintf("OttoCVariable *variable_%s = %s;\n", statement.id, compiledExpression), nil
+	return fmt.Sprintf("OttoCVariable variable_%s = %s;\n", statement.id, compiledExpression), nil
 }
 
 func compileExpressionStatement(statement ExpressionStatement) (string, error) {
@@ -75,7 +81,7 @@ func compileBlockStatement(statement BlockStatement) (string, error) {
 		result = result + compiledStatement
 	}
 
-	result = result + "\n};\n"
+	result = result + "}"
 	return result, nil
 }
 
@@ -87,13 +93,49 @@ func compileFunctionDeclaration(statement FunctionDeclaration) (string, error) {
 
 	parametersString := ""
 	for i, parameter := range statement.parameters {
-		parametersString = parametersString + "OttoCVariable *variable_" + parameter
+		parametersString = parametersString + "OttoCVariable variable_" + parameter
 		if i < len(statement.parameters)-1 {
 			parametersString = ", "
 		}
 	}
 
 	return fmt.Sprintf("\nvoid function_%s(%s) %s", statement.id, parametersString, compiledBlock), nil
+}
+
+func compileIfStatement(statement IfStatement) (string, error) {
+	compiledExpression, err := compileExpression(statement.condition)
+	if err != nil {
+		return "", err
+	}
+
+	compiledBlock, err := compileBlockStatement(statement.body)
+	if err != nil {
+		return "", err
+	}
+
+	if statement._else == nil {
+		return fmt.Sprintf("if (cBool(%s)) %s", compiledExpression, compiledBlock), nil
+	}
+
+	compiledElse, err := compileStatement(statement._else)
+	return fmt.Sprintf("if (cBool(%s)) %s else %s", compiledExpression, compiledBlock, compiledElse), nil
+
+	// switch statement := statement._else.(type) {
+	// case IfStatement:
+	// 	compiledElse, err := compileIfStatement(statement)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+
+	// 	return fmt.Sprintf("if (%s) %s else %s")
+	// case BlockStatement:
+	// 	compiledElse, err := compileBlockStatement(statement)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// default:
+	// 	return "", errors.New("Statement in else is not IfStatement or BlockStatement")
+	// }
 }
 
 func compileStatement(statement Statement) (string, error) {
@@ -106,6 +148,8 @@ func compileStatement(statement Statement) (string, error) {
 		return compileBlockStatement(statement)
 	case FunctionDeclaration:
 		return compileFunctionDeclaration(statement)
+	case IfStatement:
+		return compileIfStatement(statement)
 	}
 
 	return "", errors.New("Unknown statement type")

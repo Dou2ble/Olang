@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Statement interface {
@@ -16,6 +15,12 @@ type Program struct {
 type Expression interface {
 	expression()
 }
+
+type BooleanLiteralExpression struct {
+	value bool
+}
+
+func (e BooleanLiteralExpression) expression() {}
 
 type StringLiteralExpression struct {
 	value string
@@ -33,23 +38,31 @@ type CallExpression struct {
 
 func (e CallExpression) expression() {}
 
-type IdentifierExpression struct {
-	id string
-}
-
-func (e IdentifierExpression) expression() {}
-
 type ExpressionStatement struct {
 	expr Expression
 }
 
 func (s ExpressionStatement) statement() {}
 
+type IfStatement struct {
+	condition Expression
+	body      BlockStatement
+	_else     Statement
+}
+
+func (e IfStatement) statement() {}
+
 type BlockStatement struct {
 	content []Statement
 }
 
 func (s BlockStatement) statement() {}
+
+type IdentifierExpression struct {
+	id string
+}
+
+func (e IdentifierExpression) expression() {}
 
 type FunctionDeclaration struct {
 	id         string
@@ -76,9 +89,28 @@ func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpressi
 		return result, errors.New("No string token found in string literal expression")
 	}
 
-	return StringLiteralExpression{
-		value: tokens[*i].value,
-	}, nil
+	result.value = tokens[*i].value
+	return result, nil
+}
+
+func parseBooleanLiteralExpression(tokens []Token, i *int) (BooleanLiteralExpression, error) {
+	result := BooleanLiteralExpression{}
+
+	if tokens[*i].kind != keyword {
+		return result, errors.New("No keyword token found in boolean literal expression")
+	}
+
+	if tokens[*i].value == "true" {
+		result.value = true
+	} else if tokens[*i].value == "false" {
+		result.value = false
+	} else {
+		return result, errors.New("Keyword in boolean literal expression is not true or false")
+	}
+
+	*i++
+
+	return result, nil
 }
 
 func parseCallExpression(tokens []Token, i *int) (CallExpression, error) {
@@ -121,7 +153,11 @@ func parseIdentifierExpression(tokens []Token, i *int) (IdentifierExpression, er
 }
 
 func parseExpression(tokens []Token, i *int) (Expression, error) {
-	if tokens[*i].kind == tokenKindString {
+	if tokens[*i].kind == keyword {
+		if tokens[*i].value == "true" || tokens[*i].value == "false" {
+			return parseBooleanLiteralExpression(tokens, i)
+		}
+	} else if tokens[*i].kind == tokenKindString {
 		return parseStringLiteralExpression(tokens, i)
 	} else if tokens[*i].kind == identifier {
 		if tokens[*i+1].kind == openParentheses {
@@ -146,6 +182,52 @@ func parseExpressionStatement(tokens []Token, i *int) (ExpressionStatement, erro
 	return result, nil
 }
 
+func parseIfStatement(tokens []Token, i *int) (IfStatement, error) {
+	result := IfStatement{}
+
+	if tokens[*i].kind != keyword || (tokens[*i].value != "if" && tokens[*i].value != "elif") {
+		return result, errors.New("Expected if keyword at if statement")
+	}
+	*i++
+
+	expression, err := parseExpression(tokens, i)
+	if err != nil {
+		return result, err
+	}
+	result.condition = expression
+
+	// fmt.Println("Expression: ", tokens[*i])
+
+	block, err := parseBlockStatement(tokens, i)
+	if err != nil {
+		return result, err
+	}
+	result.body = block
+	*i++
+
+	if tokens[*i].kind == keyword {
+		if tokens[*i].value == "elif" {
+			_else, err := parseIfStatement(tokens, i)
+			if err != nil {
+				return result, err
+			}
+			result._else = _else
+		} else if tokens[*i].value == "else" {
+			*i++
+			_else, err := parseBlockStatement(tokens, i)
+			if err != nil {
+				return result, err
+			}
+			result._else = _else
+		}
+	} else {
+		*i--
+		result._else = nil
+	}
+
+	return result, nil
+}
+
 func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
 	result := BlockStatement{}
 
@@ -158,10 +240,6 @@ func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
 	for ; tokens[*i].kind != closeBrace; *i++ {
 		statement, err := parseStatement(tokens, i)
 		if err != nil {
-			fmt.Println("START")
-			fmt.Println(tokens[*i])
-			fmt.Println(tokens[*i+1])
-			fmt.Println("END")
 			return result, err
 		}
 
@@ -251,10 +329,12 @@ func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclarat
 
 func parseStatement(tokens []Token, i *int) (Statement, error) {
 	if tokens[*i].kind == keyword {
-		if string(tokens[*i].value) == "var" {
+		if tokens[*i].value == "var" {
 			return parseVariableDeclarationStatement(tokens, i)
-		} else if string(tokens[*i].value) == "fn" {
+		} else if tokens[*i].value == "fn" {
 			return parseFunctionDeclarationStatement(tokens, i)
+		} else if tokens[*i].value == "if" {
+			return parseIfStatement(tokens, i)
 		}
 	} else if tokens[*i].kind == openBrace {
 		return parseBlockStatement(tokens, i)

@@ -1,12 +1,11 @@
-fn sendMessage(message) {
-   print("Message: ")
-   printLine(message)
-}
-
-fn welcome() {
-   sendMessage("Welcome!")
-}
-
 fn main() {
-   welcome()
+    if true {
+    	printLine("True is true!")
+    } elif true {    
+	 printLine("True is not true?")
+    } elif false {
+	printLine("rienstnorst")
+    } else {
+      	printLine("oriesntoirstoeirstoiest")
+    }
 }

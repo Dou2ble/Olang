@@ -50,5 +50,8 @@ func main() {
 	cSourceFile.Write([]byte(cSource))
 
 	cmd := exec.Command("gcc", "-lgc", "-o", "a.out", "out.c")
-	cmd.Run()
+	err = cmd.Run()
+	if err != nil {
+		slog.Error(fmt.Sprint(err))
+	}
 }
