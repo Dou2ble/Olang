@@ -9,7 +9,7 @@ import (
 )
 
 func compileStringLiteralExpression(expression StringLiteralExpression) (string, error) {
-	return fmt.Sprintf("newPlispVariable(PlispVariableKindString, \"%s\")", expression.value), nil
+	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindString, \"%s\")", expression.value), nil
 }
 
 func compileCallExperssion(expression CallExpression) (string, error) {
@@ -28,12 +28,18 @@ func compileCallExperssion(expression CallExpression) (string, error) {
 	return fmt.Sprintf("function_%s(%s)", expression.callee, argumentsString), nil
 }
 
+func compileIdentifierExpression(expression IdentifierExpression) (string, error) {
+	return fmt.Sprintf("variable_%s", expression.id), nil
+}
+
 func compileExpression(expression Expression) (string, error) {
 	switch expression := expression.(type) {
 	case StringLiteralExpression:
 		return compileStringLiteralExpression(expression)
 	case CallExpression:
 		return compileCallExperssion(expression)
+	case IdentifierExpression:
+		return compileIdentifierExpression(expression)
 	}
 
 	return "", errors.New("Unknown expression type")
@@ -45,7 +51,7 @@ func compileVariableDeclaration(statement VariableDeclaration) (string, error) {
 		return compiledExpression, err
 	}
 
-	return fmt.Sprintf("PlispVariable *variable_%s = %s;\n", statement.id, compiledExpression), nil
+	return fmt.Sprintf("OttoCVariable *variable_%s = %s;\n", statement.id, compiledExpression), nil
 }
 
 func compileExpressionStatement(statement ExpressionStatement) (string, error) {
@@ -63,7 +69,7 @@ func compileBlockStatement(statement BlockStatement) (string, error) {
 	for _, statement := range statement.content {
 		compiledStatement, err := compileStatement(statement)
 		if err != nil {
-			return result, errors.New("Failed to parse statement inside of block")
+			return result, err
 		}
 
 		result = result + compiledStatement
@@ -81,7 +87,7 @@ func compileFunctionDeclaration(statement FunctionDeclaration) (string, error) {
 
 	parametersString := ""
 	for i, parameter := range statement.parameters {
-		parametersString = parametersString + "PlispVaraible " + parameter
+		parametersString = parametersString + "OttoCVariable *variable_" + parameter
 		if i < len(statement.parameters)-1 {
 			parametersString = ", "
 		}

@@ -1,0 +1,20 @@
+fn and(first, second) {
+    if first {
+	if second {
+	    return true
+	}
+    }
+
+    return false
+}
+
+fn or(first, second) {
+    if first {
+	return true
+    }
+    if second {
+	return true
+    }
+
+    return false
+}

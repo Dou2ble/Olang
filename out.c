@@ -54,3 +54,26 @@ void function_print(OttoCVariable *message) { printf("%s", cString(message)); }
 void function_printLine(OttoCVariable *message) {
   printf("%s\n", cString(message));
 }
+
+void function_sendMessage(OttoCVariable *variable_message) {
+function_print(newOttoCVariable(OttoCVariableKindString, "Message: "));
+function_printLine(variable_message);
+
+};
+
+void function_welcome() {
+function_sendMessage(newOttoCVariable(OttoCVariableKindString, "Welcome!"));
+
+};
+
+void function_main() {
+function_welcome();
+
+};
+//go:build ignore
+
+int main() {
+  GC_INIT();
+  function_main();
+  return 0;
+}

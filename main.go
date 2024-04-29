@@ -7,11 +7,12 @@ import (
 	"io/ioutil"
 	"log/slog"
 	"os"
+	"os/exec"
 )
 
 func main() {
 	// read the source code
-	sourceRaw, err := ioutil.ReadFile("source.plisp")
+	sourceRaw, err := ioutil.ReadFile("source.oc")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
@@ -32,12 +33,22 @@ func main() {
 	fmt.Println(ast)
 
 	// compiling
-	csource, err := compile(source)
+	cSource, err := compile(source)
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
 	}
-	fmt.Println()
-	fmt.Println("==> C SOURCE CODE")
-	fmt.Println(csource)
+
+	// writing c file
+	cSourceFile, err := os.Create("out.c")
+	if err != nil {
+		slog.Error(fmt.Sprint(err))
+		os.Exit(1)
+	}
+	defer cSourceFile.Close()
+
+	cSourceFile.Write([]byte(cSource))
+
+	cmd := exec.Command("gcc", "-lgc", "-o", "a.out", "out.c")
+	cmd.Run()
 }

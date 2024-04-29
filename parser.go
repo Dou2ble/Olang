@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 )
 
 type Statement interface {
@@ -31,6 +32,12 @@ type CallExpression struct {
 }
 
 func (e CallExpression) expression() {}
+
+type IdentifierExpression struct {
+	id string
+}
+
+func (e IdentifierExpression) expression() {}
 
 type ExpressionStatement struct {
 	expr Expression
@@ -102,13 +109,26 @@ func parseCallExpression(tokens []Token, i *int) (CallExpression, error) {
 	return result, nil
 }
 
+func parseIdentifierExpression(tokens []Token, i *int) (IdentifierExpression, error) {
+	result := IdentifierExpression{}
+
+	if tokens[*i].kind != identifier {
+		return result, errors.New("Expected identifier token at identifier expression")
+	}
+	result.id = tokens[*i].value
+
+	return result, nil
+}
+
 func parseExpression(tokens []Token, i *int) (Expression, error) {
 	if tokens[*i].kind == tokenKindString {
 		return parseStringLiteralExpression(tokens, i)
 	} else if tokens[*i].kind == identifier {
-		// if there is an identifier i think it's fine to assume that the expression
-		// is an call expression
-		return parseCallExpression(tokens, i)
+		if tokens[*i+1].kind == openParentheses {
+			return parseCallExpression(tokens, i)
+		}
+
+		return parseIdentifierExpression(tokens, i)
 	}
 
 	return StringLiteralExpression{}, errors.New("Failed to parse expression")
@@ -138,6 +158,10 @@ func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
 	for ; tokens[*i].kind != closeBrace; *i++ {
 		statement, err := parseStatement(tokens, i)
 		if err != nil {
+			fmt.Println("START")
+			fmt.Println(tokens[*i])
+			fmt.Println(tokens[*i+1])
+			fmt.Println("END")
 			return result, err
 		}
 

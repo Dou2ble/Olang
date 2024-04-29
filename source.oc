@@ -1,6 +1,6 @@
 fn sendMessage(message) {
    print("Message: ")
-   # printLine(message)
+   printLine(message)
 }
 
 fn welcome() {
