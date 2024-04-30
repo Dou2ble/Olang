@@ -18,10 +18,11 @@ const (
 	closeParentheses
 	semiColon
 	equalSign
+	Integer
 )
 
 var (
-	keywords = [...]string{"var", "if", "elif", "else", "fn", "true", "false"}
+	keywords = [...]string{"var", "while", "if", "elif", "else", "fn", "true", "false"}
 )
 
 type Token struct {
@@ -88,6 +89,14 @@ func tokenize(source string) []Token {
 			for ; source[i] != '"'; i++ {
 				value = value + string(source[i])
 			}
+			tokens = append(tokens, newToken(kind, value))
+		} else if unicode.IsDigit(rune(source[i])) {
+			kind = Integer
+			for ; unicode.IsDigit(rune(source[i])); i++ {
+				value = value + string(source[i])
+			}
+			i--
+
 			tokens = append(tokens, newToken(kind, value))
 		} else if unicode.IsLetter(rune(source[i])) {
 			// Identifiers and some other stuff

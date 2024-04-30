@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strconv"
 )
 
 type Statement interface {
@@ -21,6 +22,12 @@ type BooleanLiteralExpression struct {
 }
 
 func (e BooleanLiteralExpression) expression() {}
+
+type IntegerLiteralExpression struct {
+	value int64
+}
+
+func (e IntegerLiteralExpression) expression() {}
 
 type StringLiteralExpression struct {
 	value string
@@ -51,6 +58,13 @@ type IfStatement struct {
 }
 
 func (e IfStatement) statement() {}
+
+type WhileStatement struct {
+	condition Expression
+	body      BlockStatement
+}
+
+func (e WhileStatement) statement() {}
 
 type BlockStatement struct {
 	content []Statement
@@ -113,6 +127,25 @@ func parseBooleanLiteralExpression(tokens []Token, i *int) (BooleanLiteralExpres
 	return result, nil
 }
 
+func parseIntegerLiteralExpression(tokens []Token, i *int) (IntegerLiteralExpression, error) {
+	result := IntegerLiteralExpression{}
+
+	if tokens[*i].kind != Integer {
+		return result, errors.New("No integer token found in integer literal expression")
+	}
+
+	num, err := strconv.ParseInt(tokens[*i].value, 10, 64)
+	if err != nil {
+		return result, err
+	}
+
+	result.value = num
+
+	*i++
+
+	return result, nil
+}
+
 func parseCallExpression(tokens []Token, i *int) (CallExpression, error) {
 	result := CallExpression{}
 
@@ -159,6 +192,8 @@ func parseExpression(tokens []Token, i *int) (Expression, error) {
 		}
 	} else if tokens[*i].kind == tokenKindString {
 		return parseStringLiteralExpression(tokens, i)
+	} else if tokens[*i].kind == Integer {
+		return parseIntegerLiteralExpression(tokens, i)
 	} else if tokens[*i].kind == identifier {
 		if tokens[*i+1].kind == openParentheses {
 			return parseCallExpression(tokens, i)
@@ -325,6 +360,29 @@ func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclarat
 		_type: _type,
 		expr:  expression,
 	}, nil
+}
+
+func parseWhile(tokens []Token, i *int) (Statement, error) {
+	result := IfStatement{}
+
+	if tokens[*i].kind != keyword || tokens[*i].value != "while" {
+		return result, errors.New("Expected while keyword at while statement")
+	}
+	*i++
+
+	expression, err := parseExpression(tokens, i)
+	if err != nil {
+		return result, err
+	}
+	result.condition = expression
+
+	block, err := parseBlockStatement(tokens, i)
+	if err != nil {
+		return result, err
+	}
+	result.body = block
+
+	return result, nil
 }
 
 func parseStatement(tokens []Token, i *int) (Statement, error) {

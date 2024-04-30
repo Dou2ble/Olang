@@ -1,6 +1,5 @@
 //go:build ignore
 
-#include <gc/gc.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -61,8 +60,21 @@ OttoCVariable newOttoCVariable(const OttoCVariableKind kind,
   };
 }
 
-const char *cString(OttoCVariable string) { return string.value; }
-const bool *cBool(OttoCVariable boolean) { return boolean.value; }
+char *cString(OttoCVariable string) { return string.value; }
+bool *cBool(OttoCVariable boolean) { return boolean.value; }
+int64_t *cInt(OttoCVariable integer) { return integer.value; }
+// OttoCVariable add(OttoCVariable first, OttoCVariable second) {
+//   return newOttoCVariable(OttoCVariableKindInteger, (void *)(cInt(first) + cInt(second)));
+// };
+
+OttoCVariable string(OttoCVariable s) {
+  switch (s.kind) {
+  case OttoCVariableKindString:;
+    return s;
+  case OttoCVariableKindInteger:;
+    return newOttoCVariable(OttoCVariableKindString, sprintf("%d", cInt(s)));
+  }
+}
 
 void function_print(OttoCVariable message) { printf("%s", cString(message)); }
 
@@ -71,15 +83,8 @@ void function_printLine(OttoCVariable message) {
 }
 
 void function_main() {
-if (cBool(newOttoCVariable(OttoCVariableKindBoolean, true))) {
-function_printLine(newOttoCVariable(OttoCVariableKindString, "True is true!"));
-} else if (cBool(newOttoCVariable(OttoCVariableKindBoolean, true))) {
-function_printLine(newOttoCVariable(OttoCVariableKindString, "True is not true?"));
-} else if (cBool(newOttoCVariable(OttoCVariableKindBoolean, false))) {
-function_printLine(newOttoCVariable(OttoCVariableKindString, "rienstnorst"));
-} else {
-function_printLine(newOttoCVariable(OttoCVariableKindString, "oriesntoirstoeirstoiest"));
-}}//go:build ignore
+function_printLine(variable_123);
+}//go:build ignore
 
 int main() {
   GC_INIT();

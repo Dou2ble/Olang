@@ -12,6 +12,10 @@ func compileBooleanLiteralExpression(expression BooleanLiteralExpression) (strin
 	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindBoolean, %t)", expression.value), nil
 }
 
+func compileIntegerLiteralExpression(expression IntegerLiteralExpression) (string, error) {
+	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindInteger, %d)", expression.value), nil
+}
+
 func compileStringLiteralExpression(expression StringLiteralExpression) (string, error) {
 	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindString, \"%s\")", expression.value), nil
 }
@@ -40,6 +44,8 @@ func compileExpression(expression Expression) (string, error) {
 	switch expression := expression.(type) {
 	case BooleanLiteralExpression:
 		return compileBooleanLiteralExpression(expression)
+	case IntegerLiteralExpression:
+		return compileIntegerLiteralExpression(expression)
 	case StringLiteralExpression:
 		return compileStringLiteralExpression(expression)
 	case CallExpression:
@@ -136,6 +142,20 @@ func compileIfStatement(statement IfStatement) (string, error) {
 	// default:
 	// 	return "", errors.New("Statement in else is not IfStatement or BlockStatement")
 	// }
+}
+
+func compileWhileStatement(statement WhileStatement) (string, error) {
+	compiledExpression, err := compileExpression(statement.condition)
+	if err != nil {
+		return "", err
+	}
+
+	compiledBlock, err := compileBlockStatement(statement.body)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("while (cBool(%s)) %s", compiledExpression, compiledBlock), nil
 }
 
 func compileStatement(statement Statement) (string, error) {
