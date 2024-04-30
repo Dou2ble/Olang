@@ -1,4 +1,7 @@
 fn main() {
-    # printLine("Hello World")
-    printLine(213)
+    if false {
+	printLine("Hello World")
+    } else {
+        printLine("riestnorst")
+    }
 }

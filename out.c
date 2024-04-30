@@ -1,6 +1,7 @@
 //go:build ignore
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,27 +26,6 @@ OttoCVariable newOttoCVariable(const OttoCVariableKind kind,
   OttoCVariable result;
 
   switch (kind) {
-  case OttoCVariableKindString:;
-    char *allocatedString = (char *)GC_MALLOC(strlen((const char *)value) +
-                                              1); // +1 for null terminator
-    if (allocatedString != NULL) {
-      strcpy(allocatedString, value);
-      result.kind = OttoCVariableKindString;
-      result.value = allocatedString;
-    } else {
-      panic("Failed to allocate memory to string variable");
-    }
-
-  case OttoCVariableKindInteger:;
-    int64_t *allocatedInteger = (int64_t *)GC_MALLOC(sizeof(int64_t));
-    if (allocatedString != NULL) {
-      allocatedInteger = (int64_t *)value;
-      result.kind = OttoCVariableKindInteger;
-      result.value = allocatedInteger;
-    } else {
-      panic("Failed to allocate memory to integer variable");
-    }
-
   case OttoCVariableKindBoolean:;
     bool *allocatedBoolean = (bool *)GC_MALLOC(sizeof(bool));
     if (allocatedBoolean != NULL) {
@@ -60,19 +40,70 @@ OttoCVariable newOttoCVariable(const OttoCVariableKind kind,
   };
 }
 
+OttoCVariable newOttoCString(const char *value) {
+    char *allocatedString = (char *)GC_MALLOC(strlen((const char *)value) + 1); // +1 for null terminator
+
+    if (allocatedString == NULL) {
+      panic("Failed to allocate memory to string variable");
+    }
+
+    OttoCVariable result;
+    strcpy(allocatedString, value);
+
+    result.kind = OttoCVariableKindString;
+    result.value = allocatedString;
+
+    return result;
+}
+
+OttoCVariable newOttoCInteger(const int64_t value) {
+    int64_t *allocatedInteger = (int64_t *)GC_MALLOC(sizeof(int64_t));
+
+    if (allocatedInteger == NULL) {
+      panic("Failed to allocate memory to integer variable");
+    }
+
+    *allocatedInteger = value;
+
+    OttoCVariable result;
+    result.kind = OttoCVariableKindInteger;
+    result.value = allocatedInteger;
+
+    return result;
+}
+
+OttoCVariable newOttoCBoolean(const bool value) {
+  bool *allocatedBoolean = (bool *)GC_MALLOC(sizeof(bool));
+
+  if (allocatedBoolean == NULL) {
+    panic("Failed to allocate memory to integer variable");
+  }
+
+  *allocatedBoolean = value;
+
+  OttoCVariable result;
+  result.kind = OttoCVariableKindBoolean;
+  result.value = allocatedBoolean;
+
+  return result;
+}
+
 char *cString(OttoCVariable string) { return string.value; }
 bool *cBool(OttoCVariable boolean) { return boolean.value; }
 int64_t *cInt(OttoCVariable integer) { return integer.value; }
-// OttoCVariable add(OttoCVariable first, OttoCVariable second) {
-//   return newOttoCVariable(OttoCVariableKindInteger, (void *)(cInt(first) + cInt(second)));
-// };
 
-OttoCVariable string(OttoCVariable s) {
-  switch (s.kind) {
-  case OttoCVariableKindString:;
-    return s;
+OttoCVariable function_int(OttoCVariable value) {
+  switch (value.kind) {
   case OttoCVariableKindInteger:;
-    return newOttoCVariable(OttoCVariableKindString, (void *)sprintf("%d", cInt(s)));
+    return value;
+  case OttoCVariableKindBoolean:;
+    if (cBool(value)) {
+      return newOttoCInteger(1LL);
+    } else {
+      return newOttoCInteger(0LL);
+    }
+  case OttoCVariableKindString:;
+    return newOttoCInteger(strtoll(cString(value), NULL, 10));
   }
 }
 
@@ -83,8 +114,11 @@ void function_printLine(OttoCVariable message) {
 }
 
 void function_main() {
-function_printLine(newOttoCVariable(OttoCVariableKindInteger, (void *)213LL));
-}//go:build ignore
+if (cBool(newOttoCVariable(OttoCVariableKindBoolean, false))) {
+function_printLine(newOttoCString("Hello World"));
+} else {
+function_printLine(newOttoCString("riestnorst"));
+}}//go:build ignore
 
 int main() {
   GC_INIT();

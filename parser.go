@@ -122,8 +122,6 @@ func parseBooleanLiteralExpression(tokens []Token, i *int) (BooleanLiteralExpres
 		return result, errors.New("Keyword in boolean literal expression is not true or false")
 	}
 
-	*i++
-
 	return result, nil
 }
 
@@ -230,6 +228,7 @@ func parseIfStatement(tokens []Token, i *int) (IfStatement, error) {
 		return result, err
 	}
 	result.condition = expression
+	*i++
 
 	// fmt.Println("Expression: ", tokens[*i])
 
@@ -363,7 +362,7 @@ func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclarat
 }
 
 func parseWhile(tokens []Token, i *int) (Statement, error) {
-	result := IfStatement{}
+	result := WhileStatement{}
 
 	if tokens[*i].kind != keyword || tokens[*i].value != "while" {
 		return result, errors.New("Expected while keyword at while statement")
@@ -375,6 +374,7 @@ func parseWhile(tokens []Token, i *int) (Statement, error) {
 		return result, err
 	}
 	result.condition = expression
+	*i++
 
 	block, err := parseBlockStatement(tokens, i)
 	if err != nil {
@@ -393,6 +393,8 @@ func parseStatement(tokens []Token, i *int) (Statement, error) {
 			return parseFunctionDeclarationStatement(tokens, i)
 		} else if tokens[*i].value == "if" {
 			return parseIfStatement(tokens, i)
+		} else if tokens[*i].value == "while" {
+			return parseWhile(tokens, i)
 		}
 	} else if tokens[*i].kind == openBrace {
 		return parseBlockStatement(tokens, i)

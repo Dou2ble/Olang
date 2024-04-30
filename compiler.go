@@ -13,11 +13,11 @@ func compileBooleanLiteralExpression(expression BooleanLiteralExpression) (strin
 }
 
 func compileIntegerLiteralExpression(expression IntegerLiteralExpression) (string, error) {
-	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindInteger, (void *)%dLL)", expression.value), nil
+	return fmt.Sprintf("newOttoCInteger(%dLL)", expression.value), nil
 }
 
 func compileStringLiteralExpression(expression StringLiteralExpression) (string, error) {
-	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindString, \"%s\")", expression.value), nil
+	return fmt.Sprintf("newOttoCString(\"%s\")", expression.value), nil
 }
 
 func compileCallExperssion(expression CallExpression) (string, error) {
@@ -170,6 +170,8 @@ func compileStatement(statement Statement) (string, error) {
 		return compileFunctionDeclaration(statement)
 	case IfStatement:
 		return compileIfStatement(statement)
+	case WhileStatement:
+		return compileWhileStatement(statement)
 	}
 
 	return "", errors.New("Unknown statement type")
