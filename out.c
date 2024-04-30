@@ -4,11 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdbool.h>
 
 #include <gc.h>
 
-void panic(char *message) { printf("==> OttoC Panic: %s", message); }
+void panic(char *message) {
+  printf("==> OttoC Panic: %s", message);
+  exit(1);
+}
 
 typedef enum {
   OttoCVariableKindString,
@@ -20,25 +24,6 @@ typedef struct {
   OttoCVariableKind kind;
   void *value;
 } OttoCVariable;
-
-OttoCVariable newOttoCVariable(const OttoCVariableKind kind,
-                               const void *value) {
-  OttoCVariable result;
-
-  switch (kind) {
-  case OttoCVariableKindBoolean:;
-    bool *allocatedBoolean = (bool *)GC_MALLOC(sizeof(bool));
-    if (allocatedBoolean != NULL) {
-      allocatedBoolean = (bool *)value;
-      result.kind = OttoCVariableKindBoolean;
-      result.value = allocatedBoolean;
-    } else {
-      panic("Failed to allocate memory to boolean variable");
-    }
-
-  return result;
-  };
-}
 
 OttoCVariable newOttoCString(const char *value) {
     char *allocatedString = (char *)GC_MALLOC(strlen((const char *)value) + 1); // +1 for null terminator
@@ -107,6 +92,35 @@ OttoCVariable function_int(OttoCVariable value) {
   }
 }
 
+OttoCVariable function_string(OttoCVariable value) {
+  switch (value.kind) {
+  case OttoCVariableKindInteger:;
+    char str[21];
+    sprintf(str, "%" PRId64, *cInt(value));
+    return newOttoCString(str);
+  case OttoCVariableKindBoolean:;
+    return *cBool(value) ? newOttoCString("true") : newOttoCString("false");
+  case OttoCVariableKindString:;
+    return value;
+  }
+}
+
+OttoCVariable function_add(OttoCVariable first, OttoCVariable second) {
+  return newOttoCInteger(*cInt(first) + *cInt(second));
+}
+
+OttoCVariable function_greaterThan(OttoCVariable first, OttoCVariable second) {
+  return newOttoCBoolean(*cInt(first) > *cInt(second));
+}
+
+OttoCVariable function_lessThan(OttoCVariable first, OttoCVariable second) {
+  return newOttoCBoolean(*cInt(first) < *cInt(second));
+}
+
+OttoCVariable function_equal(OttoCVariable first, OttoCVariable second) {
+  return newOttoCBoolean(*cInt(first) == *cInt(second));
+}
+
 void function_print(OttoCVariable message) { printf("%s", cString(message)); }
 
 void function_printLine(OttoCVariable message) {
@@ -114,10 +128,10 @@ void function_printLine(OttoCVariable message) {
 }
 
 void function_main() {
-if (cBool(newOttoCVariable(OttoCVariableKindBoolean, false))) {
-function_printLine(newOttoCString("Hello World"));
-} else {
-function_printLine(newOttoCString("riestnorst"));
+OttoCVariable variable_i = newOttoCInteger(0LL);
+while (*cBool(function_lessThan(variable_i, newOttoCInteger(5LL)))) {
+function_printLine(function_string(variable_i));
+variable_i = function_add(variable_i, newOttoCInteger(1LL));
 }}//go:build ignore
 
 int main() {

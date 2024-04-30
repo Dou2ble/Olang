@@ -9,7 +9,7 @@ import (
 )
 
 func compileBooleanLiteralExpression(expression BooleanLiteralExpression) (string, error) {
-	return fmt.Sprintf("newOttoCVariable(OttoCVariableKindBoolean, %t)", expression.value), nil
+	return fmt.Sprintf("newOttoCBoolean(%t)", expression.value), nil
 }
 
 func compileIntegerLiteralExpression(expression IntegerLiteralExpression) (string, error) {
@@ -55,6 +55,15 @@ func compileExpression(expression Expression) (string, error) {
 	}
 
 	return "", errors.New("Unknown expression type")
+}
+
+func compileAssignmentStatement(statement AssignmentStatement) (string, error) {
+	compiledExpression, err := compileExpression(statement.expr)
+	if err != nil {
+		return compiledExpression, err
+	}
+
+	return fmt.Sprintf("variable_%s = %s;\n", statement.id, compiledExpression), nil
 }
 
 func compileVariableDeclaration(statement VariableDeclaration) (string, error) {
@@ -124,24 +133,7 @@ func compileIfStatement(statement IfStatement) (string, error) {
 	}
 
 	compiledElse, err := compileStatement(statement._else)
-	return fmt.Sprintf("if (cBool(%s)) %s else %s", compiledExpression, compiledBlock, compiledElse), nil
-
-	// switch statement := statement._else.(type) {
-	// case IfStatement:
-	// 	compiledElse, err := compileIfStatement(statement)
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-
-	// 	return fmt.Sprintf("if (%s) %s else %s")
-	// case BlockStatement:
-	// 	compiledElse, err := compileBlockStatement(statement)
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-	// default:
-	// 	return "", errors.New("Statement in else is not IfStatement or BlockStatement")
-	// }
+	return fmt.Sprintf("if (*cBool(%s)) %s else %s", compiledExpression, compiledBlock, compiledElse), nil
 }
 
 func compileWhileStatement(statement WhileStatement) (string, error) {
@@ -155,11 +147,13 @@ func compileWhileStatement(statement WhileStatement) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("while (cBool(%s)) %s", compiledExpression, compiledBlock), nil
+	return fmt.Sprintf("while (*cBool(%s)) %s", compiledExpression, compiledBlock), nil
 }
 
 func compileStatement(statement Statement) (string, error) {
 	switch statement := statement.(type) {
+	case AssignmentStatement:
+		return compileAssignmentStatement(statement)
 	case VariableDeclaration:
 		return compileVariableDeclaration(statement)
 	case ExpressionStatement:

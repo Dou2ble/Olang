@@ -1,7 +1,7 @@
 fn main() {
-    if false {
-	printLine("Hello World")
-    } else {
-        printLine("riestnorst")
+    var i = 0
+    while lessThan(i 5) {
+	printLine(string(i))
+	i = add(i 1)
     }
 }

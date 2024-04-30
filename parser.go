@@ -78,6 +78,13 @@ type IdentifierExpression struct {
 
 func (e IdentifierExpression) expression() {}
 
+type AssignmentStatement struct {
+	id   string
+	expr Expression
+}
+
+func (s AssignmentStatement) statement() {}
+
 type FunctionDeclaration struct {
 	id         string
 	parameters []string
@@ -87,9 +94,8 @@ type FunctionDeclaration struct {
 func (s FunctionDeclaration) statement() {}
 
 type VariableDeclaration struct {
-	id    string
-	_type string
-	expr  Expression
+	id   string
+	expr Expression
 }
 
 func (s VariableDeclaration) statement() {
@@ -323,6 +329,31 @@ func parseFunctionDeclarationStatement(tokens []Token, i *int) (FunctionDeclarat
 	return result, nil
 }
 
+func parseAssignmentStatement(tokens []Token, i *int) (AssignmentStatement, error) {
+	if tokens[*i].kind != identifier {
+		return AssignmentStatement{}, errors.New("didn't find any identifier in assignment statement")
+	}
+	id := tokens[*i].value
+	*i++
+
+	// check for the =
+	if tokens[*i].kind != equalSign {
+		return AssignmentStatement{}, errors.New("didn't find any = after the variable name")
+	}
+	*i++
+
+	// now parse an expression
+	expression, err := parseExpression(tokens, i)
+	if err != nil {
+		return AssignmentStatement{}, err
+	}
+
+	return AssignmentStatement{
+		id:   id,
+		expr: expression,
+	}, nil
+}
+
 func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclaration, error) {
 	if tokens[*i].kind != keyword || string(tokens[*i].value) != "var" {
 		return VariableDeclaration{}, errors.New("Didn't find var keyword")
@@ -333,13 +364,6 @@ func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclarat
 		return VariableDeclaration{}, errors.New("didn't find any identifier after the var keyword")
 	}
 	id := tokens[*i].value
-	*i++
-
-	// check for the type
-	if tokens[*i].kind != _type {
-		return VariableDeclaration{}, errors.New("didn't find the type for the variable after the variable name")
-	}
-	_type := tokens[*i].value
 	*i++
 
 	// check for the =
@@ -355,9 +379,8 @@ func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclarat
 	}
 
 	return VariableDeclaration{
-		id:    id,
-		_type: _type,
-		expr:  expression,
+		id:   id,
+		expr: expression,
 	}, nil
 }
 
@@ -398,6 +421,8 @@ func parseStatement(tokens []Token, i *int) (Statement, error) {
 		}
 	} else if tokens[*i].kind == openBrace {
 		return parseBlockStatement(tokens, i)
+	} else if tokens[*i].kind == identifier && tokens[*i+1].kind == equalSign {
+		return parseAssignmentStatement(tokens, i)
 	}
 
 	// when no normal statement is found we should try to fall back to a expression statement
