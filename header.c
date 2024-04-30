@@ -72,7 +72,7 @@ OttoCVariable string(OttoCVariable s) {
   case OttoCVariableKindString:;
     return s;
   case OttoCVariableKindInteger:;
-    return newOttoCVariable(OttoCVariableKindString, sprintf("%d", cInt(s)));
+    return newOttoCVariable(OttoCVariableKindString, (void *)sprintf("%d", cInt(s)));
   }
 }
 

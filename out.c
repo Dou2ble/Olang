@@ -72,7 +72,7 @@ OttoCVariable string(OttoCVariable s) {
   case OttoCVariableKindString:;
     return s;
   case OttoCVariableKindInteger:;
-    return newOttoCVariable(OttoCVariableKindString, sprintf("%d", cInt(s)));
+    return newOttoCVariable(OttoCVariableKindString, (void *)sprintf("%d", cInt(s)));
   }
 }
 
@@ -83,7 +83,7 @@ void function_printLine(OttoCVariable message) {
 }
 
 void function_main() {
-function_printLine(variable_123);
+function_printLine(newOttoCVariable(OttoCVariableKindInteger, (void *)213LL));
 }//go:build ignore
 
 int main() {

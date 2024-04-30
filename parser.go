@@ -141,7 +141,7 @@ func parseIntegerLiteralExpression(tokens []Token, i *int) (IntegerLiteralExpres
 
 	result.value = num
 
-	*i++
+	// *i++
 
 	return result, nil
 }

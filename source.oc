@@ -1,12 +1,4 @@
 fn main() {
-    printLine(123)
-    # if true {
-    # 	printLine("True is true!")
-    # } elif true {    
-    # 	 printLine("True is not true?")
-    # } elif false {
-    # 	printLine("rienstnorst")
-    # } else {
-    #   	printLine("oriesntoirstoeirstoiest")
-    # }
+    # printLine("Hello World")
+    printLine(213)
 }
