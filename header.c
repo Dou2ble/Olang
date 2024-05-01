@@ -17,13 +17,19 @@ void panic(char *message) {
 typedef enum {
   OttoCVariableKindString,
   OttoCVariableKindInteger,
-  OttoCVariableKindBoolean
+  OttoCVariableKindBoolean,
+  OttoCVariableKindArray
 } OttoCVariableKind;
 
 typedef struct {
   OttoCVariableKind kind;
   void *value;
 } OttoCVariable;
+
+typedef struct {
+  uint_fast32_t length;
+  OttoCVariable *array;
+} OttoCArray;
 
 OttoCVariable newOttoCString(const char *value) {
     char *allocatedString = (char *)GC_MALLOC(strlen((const char *)value) + 1); // +1 for null terminator
@@ -72,6 +78,21 @@ OttoCVariable newOttoCBoolean(const bool value) {
 
   return result;
 }
+
+// OttoCVariable newOttoCArray(uint_fast32_t length, const OttoCVariable* value) {
+//   OttoCArray *ottoCArray = (OttoCArray *)malloc(sizeof(ottoCArray));
+//   OttoCArray *allocatedArray = (OttoCVariable *)malloc(length * sizeof(OttoCVariable));
+//   ottoCArray->array = allocatedArray;
+//   ottoCArray->length = length;
+// 
+//   memcpy(value, allocatedArray, length * sizeof(OttoCVariable));
+// 
+//   OttoCVariable result;
+//   result.kind = OttoCVariableKindArray;
+//   result.value = ottoCArray;
+// 
+//   return result;
+// }
 
 char *cString(OttoCVariable string) { return string.value; }
 bool *cBool(OttoCVariable boolean) { return boolean.value; }
