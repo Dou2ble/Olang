@@ -19,6 +19,7 @@ const (
 	semiColon
 	equalSign
 	Integer
+	pipe
 )
 
 var (
@@ -81,6 +82,8 @@ func tokenize(source string) []Token {
 			tokens = append(tokens, newToken(semiColon, ";"))
 		} else if source[i] == '=' {
 			tokens = append(tokens, newToken(equalSign, "="))
+		} else if source[i] == '|' {
+			tokens = append(tokens, newToken(pipe, "|"))
 		} else if source[i] == '"' {
 			// String
 

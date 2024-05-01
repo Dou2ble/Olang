@@ -17,6 +17,10 @@ type Expression interface {
 	expression()
 }
 
+type EmptyArrayLiteralExpression struct{}
+
+func (e EmptyArrayLiteralExpression) expression() {}
+
 type BooleanLiteralExpression struct {
 	value bool
 }
@@ -100,6 +104,10 @@ type VariableDeclaration struct {
 
 func (s VariableDeclaration) statement() {
 
+}
+
+func parseEmptyArrayLiteralExpression(tokens []Token, i *int) (EmptyArrayLiteralExpression, error) {
+	return EmptyArrayLiteralExpression{}, nil
 }
 
 func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpression, error) {
@@ -194,6 +202,8 @@ func parseExpression(tokens []Token, i *int) (Expression, error) {
 		if tokens[*i].value == "true" || tokens[*i].value == "false" {
 			return parseBooleanLiteralExpression(tokens, i)
 		}
+	} else if tokens[*i].kind == pipe {
+		return parseEmptyArrayLiteralExpression(tokens, i)
 	} else if tokens[*i].kind == tokenKindString {
 		return parseStringLiteralExpression(tokens, i)
 	} else if tokens[*i].kind == Integer {

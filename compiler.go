@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+func compileEmptyArrayLiteralExpression() (string, error) {
+	return "newEmptyOttoCArray()", nil
+}
+
 func compileBooleanLiteralExpression(expression BooleanLiteralExpression) (string, error) {
 	return fmt.Sprintf("newOttoCBoolean(%t)", expression.value), nil
 }
@@ -52,6 +56,8 @@ func compileExpression(expression Expression) (string, error) {
 		return compileCallExperssion(expression)
 	case IdentifierExpression:
 		return compileIdentifierExpression(expression)
+	case EmptyArrayLiteralExpression:
+		return compileEmptyArrayLiteralExpression()
 	}
 
 	return "", errors.New("Unknown expression type")

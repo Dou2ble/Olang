@@ -1,5 +1,6 @@
 //go:build ignore
 
+#include <gc/gc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,24 +80,66 @@ OttoCVariable newOttoCBoolean(const bool value) {
   return result;
 }
 
-// OttoCVariable newOttoCArray(uint_fast32_t length, const OttoCVariable* value) {
-//   OttoCArray *ottoCArray = (OttoCArray *)malloc(sizeof(ottoCArray));
-//   OttoCArray *allocatedArray = (OttoCVariable *)malloc(length * sizeof(OttoCVariable));
-//   ottoCArray->array = allocatedArray;
-//   ottoCArray->length = length;
-// 
-//   memcpy(value, allocatedArray, length * sizeof(OttoCVariable));
-// 
-//   OttoCVariable result;
-//   result.kind = OttoCVariableKindArray;
-//   result.value = ottoCArray;
-// 
-//   return result;
-// }
+OttoCVariable newEmptyOttoCArray() {
+  OttoCArray *allocatedOttoCArray = (OttoCArray *)GC_MALLOC(sizeof(OttoCArray));
+
+  if (allocatedOttoCArray == NULL) {
+    panic("Failed to allocate memory to array variable");
+  }
+
+  allocatedOttoCArray->length = 0;
+  allocatedOttoCArray->array = NULL;
+
+  OttoCVariable result;
+  result.kind = OttoCVariableKindArray;
+  result.value = allocatedOttoCArray;
+  return result;
+}
+
+OttoCVariable newOttoCArray(int_fast32_t length, OttoCVariable *array) {
+  OttoCVariable *heapArray = (OttoCVariable *)GC_MALLOC(length*sizeof(OttoCVariable));
+
+  if (heapArray == NULL) {
+    panic("Failed to allocate memory to array variable");
+  }
+
+  OttoCArray *allocatedOttoCArray = (OttoCArray *)GC_MALLOC(sizeof(OttoCArray));
+
+  if (allocatedOttoCArray == NULL) {
+    panic("Failed to allocate memory to array variable");
+  }
+
+  memcpy(heapArray, array, length*sizeof(OttoCVariable));
+
+  allocatedOttoCArray->length = 0;
+  allocatedOttoCArray->array = NULL;
+
+  OttoCVariable result;
+  result.kind = OttoCVariableKindArray;
+  result.value = allocatedOttoCArray;
+  return result;
+}
 
 char *cString(OttoCVariable string) { return string.value; }
 bool *cBool(OttoCVariable boolean) { return boolean.value; }
 int64_t *cInt(OttoCVariable integer) { return integer.value; }
+
+OttoCVariable function_append(OttoCVariable array, OttoCVariable appendage) {
+  printf("1\n");
+  int_fast32_t length = ((OttoCArray *)array.value)->length;
+  printf("2\n");
+
+  OttoCVariable arrayButLonger[length + 1];
+  arrayButLonger[0] = newOttoCInteger(0);
+  // memcpy(arrayButLonger, ((OttoCArray *)array.value)->array, ((OttoCArray *)array.value)->length*sizeof(OttoCVariable));
+  
+  OttoCVariable result = newOttoCArray(length + 1, arrayButLonger);
+  printf("3\n");
+  printf("%ld\n", length);
+  ((OttoCArray *)result.value)->array[length] = appendage;
+  printf("4\n");
+  return result;
+}
 
 OttoCVariable function_int(OttoCVariable value) {
   switch (value.kind) {
@@ -110,6 +153,8 @@ OttoCVariable function_int(OttoCVariable value) {
     }
   case OttoCVariableKindString:;
     return newOttoCInteger(strtoll(cString(value), NULL, 10));
+  case OttoCVariableKindArray:;
+    return newOttoCInteger(((OttoCArray *)value.value)->length);
   }
 }
 
@@ -123,6 +168,8 @@ OttoCVariable function_string(OttoCVariable value) {
     return *cBool(value) ? newOttoCString("true") : newOttoCString("false");
   case OttoCVariableKindString:;
     return value;
+  case OttoCVariableKindArray:;
+    return function_string(function_int(value));
   }
 }
 
