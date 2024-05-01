@@ -135,7 +135,7 @@ func compileIfStatement(statement IfStatement) (string, error) {
 	}
 
 	if statement._else == nil {
-		return fmt.Sprintf("if (cBool(%s)) %s", compiledExpression, compiledBlock), nil
+		return fmt.Sprintf("if (*cBool(%s)) %s", compiledExpression, compiledBlock), nil
 	}
 
 	compiledElse, err := compileStatement(statement._else)

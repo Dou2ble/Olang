@@ -1,5 +1,30 @@
+fn printArray(array) {
+    print("[")
+    var i = 0
+    while lessThan(i int(array)) {
+	print(string(getIndex(array i)))
+
+	if lessThan(i subtract(int(array) 1)) {
+	     print(" ")
+	}
+
+	i = add(i 1)
+    }
+    printLine("]")
+}
+
 fn main() {
     var array = |
+
     array = append(array 1)
-    printLine(string(array))
+    array = append(array 2)
+    array = append(array 3)
+    array = append(array 4)
+    array = append(array 5)
+    array = append(array 6)
+    array = append(array 7)
+
+    setIndex(array 0 100)
+
+    printArray(array)
 }

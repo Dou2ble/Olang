@@ -111,8 +111,8 @@ OttoCVariable newOttoCArray(int_fast32_t length, OttoCVariable *array) {
 
   memcpy(heapArray, array, length*sizeof(OttoCVariable));
 
-  allocatedOttoCArray->length = 0;
-  allocatedOttoCArray->array = NULL;
+  allocatedOttoCArray->length = length;
+  allocatedOttoCArray->array = heapArray;
 
   OttoCVariable result;
   result.kind = OttoCVariableKindArray;
@@ -124,20 +124,23 @@ char *cString(OttoCVariable string) { return string.value; }
 bool *cBool(OttoCVariable boolean) { return boolean.value; }
 int64_t *cInt(OttoCVariable integer) { return integer.value; }
 
+OttoCVariable function_getIndex(OttoCVariable array, OttoCVariable index) {
+  return ((OttoCArray *)array.value)->array[*cInt(index)];
+}
+
+void function_setIndex(OttoCVariable array, OttoCVariable index, OttoCVariable value) {
+  ((OttoCArray *)array.value)->array[*cInt(index)] = value;
+}
+
 OttoCVariable function_append(OttoCVariable array, OttoCVariable appendage) {
-  printf("1\n");
   int_fast32_t length = ((OttoCArray *)array.value)->length;
-  printf("2\n");
 
   OttoCVariable arrayButLonger[length + 1];
   arrayButLonger[0] = newOttoCInteger(0);
-  // memcpy(arrayButLonger, ((OttoCArray *)array.value)->array, ((OttoCArray *)array.value)->length*sizeof(OttoCVariable));
+  memcpy(arrayButLonger, ((OttoCArray *)array.value)->array, ((OttoCArray *)array.value)->length*sizeof(OttoCVariable));
   
   OttoCVariable result = newOttoCArray(length + 1, arrayButLonger);
-  printf("3\n");
-  printf("%ld\n", length);
   ((OttoCArray *)result.value)->array[length] = appendage;
-  printf("4\n");
   return result;
 }
 
@@ -177,6 +180,10 @@ OttoCVariable function_add(OttoCVariable first, OttoCVariable second) {
   return newOttoCInteger(*cInt(first) + *cInt(second));
 }
 
+OttoCVariable function_subtract(OttoCVariable first, OttoCVariable second) {
+  return newOttoCInteger(*cInt(first) - *cInt(second));
+}
+
 OttoCVariable function_greaterThan(OttoCVariable first, OttoCVariable second) {
   return newOttoCBoolean(*cInt(first) > *cInt(second));
 }
@@ -195,10 +202,27 @@ void function_printLine(OttoCVariable message) {
   printf("%s\n", cString(message));
 }
 
+void function_printArray(OttoCVariable variable_array) {
+function_print(newOttoCString("["));
+OttoCVariable variable_i = newOttoCInteger(0LL);
+while (*cBool(function_lessThan(variable_i, function_int(variable_array)))) {
+function_print(function_string(function_getIndex(variable_array, variable_i)));
+if (*cBool(function_lessThan(variable_i, function_subtract(function_int(variable_array), newOttoCInteger(1LL))))) {
+function_print(newOttoCString(" "));
+}variable_i = function_add(variable_i, newOttoCInteger(1LL));
+}function_printLine(newOttoCString("]"));
+}
 void function_main() {
 OttoCVariable variable_array = newEmptyOttoCArray();
 variable_array = function_append(variable_array, newOttoCInteger(1LL));
-function_printLine(function_string(variable_array));
+variable_array = function_append(variable_array, newOttoCInteger(2LL));
+variable_array = function_append(variable_array, newOttoCInteger(3LL));
+variable_array = function_append(variable_array, newOttoCInteger(4LL));
+variable_array = function_append(variable_array, newOttoCInteger(5LL));
+variable_array = function_append(variable_array, newOttoCInteger(6LL));
+variable_array = function_append(variable_array, newOttoCInteger(7LL));
+function_setIndex(variable_array, newOttoCInteger(0LL), newOttoCInteger(100LL));
+function_printArray(variable_array);
 }//go:build ignore
 
 int main() {
