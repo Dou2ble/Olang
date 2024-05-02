@@ -41,7 +41,7 @@ func compileCallExperssion(expression CallExpression) (string, error) {
 }
 
 func compileIdentifierExpression(expression IdentifierExpression) (string, error) {
-	return fmt.Sprintf("variable_%s", expression.id), nil
+	return fmt.Sprintf("dupe(variable_%s)", expression.id), nil
 }
 
 func compileExpression(expression Expression) (string, error) {

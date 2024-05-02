@@ -1,7 +1,7 @@
 # The OttoC Compiler
 
 ## TODO
-- try if chaining
+- murmur hash hashtable
 
 ## Examples
 

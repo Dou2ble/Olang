@@ -32,6 +32,8 @@ typedef struct {
   OttoCVariable *array;
 } OttoCArray;
 
+OttoCVariable function_string(OttoCVariable value);
+
 OttoCVariable newOttoCString(const char *value) {
     char *allocatedString = (char *)GC_MALLOC(strlen((const char *)value) + 1); // +1 for null terminator
 
@@ -123,25 +125,50 @@ OttoCVariable newOttoCArray(int_fast32_t length, OttoCVariable *array) {
 char *cString(OttoCVariable string) { return string.value; }
 bool *cBool(OttoCVariable boolean) { return boolean.value; }
 int64_t *cInt(OttoCVariable integer) { return integer.value; }
+OttoCVariable *cArray(OttoCVariable array) { return ((OttoCArray *)array.value)->array; }
 
-OttoCVariable function_getIndex(OttoCVariable array, OttoCVariable index) {
-  return ((OttoCArray *)array.value)->array[*cInt(index)];
+OttoCVariable function_readFile(OttoCVariable path) {
+  FILE *filePointer = fopen(cString(path), "r");
+  if (filePointer == NULL) {
+    panic("Failed to open file");
+  }
+
+  fseek(filePointer, 0, SEEK_END);
+  int fileSize = ftell(filePointer);
+  fseek(filePointer, 0, SEEK_SET);
+
+  char *fileContent = (char *)GC_MALLOC(fileSize*sizeof(char));
+  if (fileContent == NULL) {
+    panic("Failed to allocated memory while reading file");
+  }
+
+  fread(fileContent, sizeof(char), fileSize, filePointer);
+  fileContent[fileSize] = '\0';
+  fclose(filePointer);
+
+  return newOttoCString(fileContent);
 }
 
-void function_setIndex(OttoCVariable array, OttoCVariable index, OttoCVariable value) {
-  ((OttoCArray *)array.value)->array[*cInt(index)] = value;
+OttoCVariable function_len(OttoCVariable value) {
+  if (value.kind == OttoCVariableKindArray) {
+    return newOttoCInteger(((OttoCArray *)value.value)->length);
+  }
+
+  OttoCVariable string = function_string(value);
+  return newOttoCInteger(strlen(cString(string)));
 }
 
-OttoCVariable function_append(OttoCVariable array, OttoCVariable appendage) {
-  int_fast32_t length = ((OttoCArray *)array.value)->length;
-
-  OttoCVariable arrayButLonger[length + 1];
-  arrayButLonger[0] = newOttoCInteger(0);
-  memcpy(arrayButLonger, ((OttoCArray *)array.value)->array, ((OttoCArray *)array.value)->length*sizeof(OttoCVariable));
-  
-  OttoCVariable result = newOttoCArray(length + 1, arrayButLonger);
-  ((OttoCArray *)result.value)->array[length] = appendage;
-  return result;
+OttoCVariable dupe(OttoCVariable value) {
+  switch (value.kind) {
+  case OttoCVariableKindBoolean:;
+    return newOttoCBoolean(*cBool(value));
+  case OttoCVariableKindInteger:;
+    return newOttoCInteger(*cInt(value));
+  case OttoCVariableKindString:;
+    return newOttoCBoolean(*cString(value));
+  case OttoCVariableKindArray:;
+    return newOttoCArray((int_fast32_t)*cInt(function_len(value)), cArray(value));
+  }
 }
 
 OttoCVariable function_int(OttoCVariable value) {
@@ -175,6 +202,35 @@ OttoCVariable function_string(OttoCVariable value) {
     return function_string(function_int(value));
   }
 }
+
+OttoCVariable function_getIndex(OttoCVariable value, OttoCVariable index) {
+  if (value.kind == OttoCVariableKindArray) {
+    return ((OttoCArray *)value.value)->array[*cInt(index)];
+  }
+
+  OttoCVariable string = function_string(value);
+  char c = cString(string)[*cInt(index)];
+  char s[2] = {c, '\0'};
+  return newOttoCString(s);
+}
+
+OttoCVariable function_setIndex(OttoCVariable array, OttoCVariable index, OttoCVariable value) {
+  ((OttoCArray *)array.value)->array[*cInt(index)] = value;
+  return array;
+}
+
+OttoCVariable function_append(OttoCVariable array, OttoCVariable appendage) {
+  int_fast32_t length = ((OttoCArray *)array.value)->length;
+
+  OttoCVariable arrayButLonger[length + 1];
+  arrayButLonger[0] = newOttoCInteger(0);
+  memcpy(arrayButLonger, ((OttoCArray *)array.value)->array, ((OttoCArray *)array.value)->length*sizeof(OttoCVariable));
+  
+  OttoCVariable result = newOttoCArray(length + 1, arrayButLonger);
+  ((OttoCArray *)result.value)->array[length] = appendage;
+  return result;
+}
+
 
 OttoCVariable function_add(OttoCVariable first, OttoCVariable second) {
   return newOttoCInteger(*cInt(first) + *cInt(second));

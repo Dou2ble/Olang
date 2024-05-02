@@ -255,21 +255,19 @@ func parseIfStatement(tokens []Token, i *int) (IfStatement, error) {
 	result.body = block
 	*i++
 
-	if tokens[*i].kind == keyword {
-		if tokens[*i].value == "elif" {
-			_else, err := parseIfStatement(tokens, i)
-			if err != nil {
-				return result, err
-			}
-			result._else = _else
-		} else if tokens[*i].value == "else" {
-			*i++
-			_else, err := parseBlockStatement(tokens, i)
-			if err != nil {
-				return result, err
-			}
-			result._else = _else
+	if tokens[*i].kind == keyword && tokens[*i].value == "elif" {
+		_else, err := parseIfStatement(tokens, i)
+		if err != nil {
+			return result, err
 		}
+		result._else = _else
+	} else if tokens[*i].kind == keyword && tokens[*i].value == "else" {
+		*i++
+		_else, err := parseBlockStatement(tokens, i)
+		if err != nil {
+			return result, err
+		}
+		result._else = _else
 	} else {
 		*i--
 		result._else = nil

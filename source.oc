@@ -1,30 +1,18 @@
-fn printArray(array) {
-    print("[")
-    var i = 0
-    while lessThan(i int(array)) {
-	print(string(getIndex(array i)))
+fn printFibonacci(limit) {
+    var x = 0
+    var y = 1
+    var z = 0
 
-	if lessThan(i subtract(int(array) 1)) {
-	     print(" ")
-	}
+    while lessThan(x limit) {
+        printLine(string(x))
 
-	i = add(i 1)
+    	z = add(x y)	
+	x = y
+	y = z
     }
-    printLine("]")
 }
 
 fn main() {
-    var array = |
-
-    array = append(array 1)
-    array = append(array 2)
-    array = append(array 3)
-    array = append(array 4)
-    array = append(array 5)
-    array = append(array 6)
-    array = append(array 7)
-
-    setIndex(array 0 100)
-
-    printArray(array)
+    printFibonacci(1000000)
 }
+
