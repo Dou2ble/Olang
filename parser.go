@@ -5,109 +5,8 @@ import (
 	"strconv"
 )
 
-type Statement interface {
-	statement()
-}
-
-type Program struct {
-	content []Statement
-}
-
-type Expression interface {
-	expression()
-}
-
-type EmptyArrayLiteralExpression struct{}
-
-func (e EmptyArrayLiteralExpression) expression() {}
-
-type BooleanLiteralExpression struct {
-	value bool
-}
-
-func (e BooleanLiteralExpression) expression() {}
-
-type IntegerLiteralExpression struct {
-	value int64
-}
-
-func (e IntegerLiteralExpression) expression() {}
-
-type StringLiteralExpression struct {
-	value string
-}
-
-func (e StringLiteralExpression) expression() {}
-
-type CallExpression struct {
-	callee string
-	// in a function declaration this would be called parameters
-	// but in a call expression these are called arguments
-	// for some reason :shrug:
-	arguments []Expression
-}
-
-func (e CallExpression) expression() {}
-
-type ExpressionStatement struct {
-	expr Expression
-}
-
-func (s ExpressionStatement) statement() {}
-
-type IfStatement struct {
-	condition Expression
-	body      BlockStatement
-	_else     Statement
-}
-
-func (e IfStatement) statement() {}
-
-type WhileStatement struct {
-	condition Expression
-	body      BlockStatement
-}
-
-func (e WhileStatement) statement() {}
-
-type BlockStatement struct {
-	content []Statement
-}
-
-func (s BlockStatement) statement() {}
-
-type IdentifierExpression struct {
-	id string
-}
-
-func (e IdentifierExpression) expression() {}
-
-type AssignmentStatement struct {
-	id   string
-	expr Expression
-}
-
-func (s AssignmentStatement) statement() {}
-
-type FunctionDeclaration struct {
-	id         string
-	parameters []string
-	body       BlockStatement
-}
-
-func (s FunctionDeclaration) statement() {}
-
-type VariableDeclaration struct {
-	id   string
-	expr Expression
-}
-
-func (s VariableDeclaration) statement() {
-
-}
-
 func parseEmptyArrayLiteralExpression(tokens []Token, i *int) (EmptyArrayLiteralExpression, error) {
-	return EmptyArrayLiteralExpression{}, nil
+	return EmptyArrayLiteralExpression{location: tokens[*i].start}, nil
 }
 
 func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpression, error) {
@@ -118,6 +17,8 @@ func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpressi
 	}
 
 	result.value = tokens[*i].value
+	result.start = tokens[*i].start
+	result.end = tokens[*i].end
 	return result, nil
 }
 
@@ -136,6 +37,9 @@ func parseBooleanLiteralExpression(tokens []Token, i *int) (BooleanLiteralExpres
 		return result, errors.New("Keyword in boolean literal expression is not true or false")
 	}
 
+	result.start = tokens[*i].start
+	result.end = tokens[*i].end
+
 	return result, nil
 }
 
@@ -152,8 +56,8 @@ func parseIntegerLiteralExpression(tokens []Token, i *int) (IntegerLiteralExpres
 	}
 
 	result.value = num
-
-	// *i++
+	result.start = tokens[*i].start
+	result.end = tokens[*i].end
 
 	return result, nil
 }
@@ -165,6 +69,7 @@ func parseCallExpression(tokens []Token, i *int) (CallExpression, error) {
 		return result, errors.New("Expected identifier at call expression")
 	}
 	result.callee = tokens[*i].value
+	result.start = tokens[*i].start
 	*i++
 
 	if tokens[*i].kind != openParentheses {
@@ -182,6 +87,7 @@ func parseCallExpression(tokens []Token, i *int) (CallExpression, error) {
 		arguments = append(arguments, expression)
 	}
 	result.arguments = arguments
+	result.end = tokens[*i].end
 
 	return result, nil
 }
@@ -193,6 +99,8 @@ func parseIdentifierExpression(tokens []Token, i *int) (IdentifierExpression, er
 		return result, errors.New("Expected identifier token at identifier expression")
 	}
 	result.id = tokens[*i].value
+	result.start = tokens[*i].start
+	result.end = tokens[*i].end
 
 	return result, nil
 }
@@ -228,6 +136,7 @@ func parseExpressionStatement(tokens []Token, i *int) (ExpressionStatement, erro
 	}
 
 	result.expr = expression
+	result.start, result.end = expression.getLocationOfExpression()
 	return result, nil
 }
 
@@ -237,6 +146,7 @@ func parseIfStatement(tokens []Token, i *int) (IfStatement, error) {
 	if tokens[*i].kind != keyword || (tokens[*i].value != "if" && tokens[*i].value != "elif") {
 		return result, errors.New("Expected if keyword at if statement")
 	}
+	result.start = tokens[*i].start
 	*i++
 
 	expression, err := parseExpression(tokens, i)
@@ -273,6 +183,7 @@ func parseIfStatement(tokens []Token, i *int) (IfStatement, error) {
 		result._else = nil
 	}
 
+	result.end = tokens[*i].end
 	return result, nil
 }
 
@@ -282,6 +193,7 @@ func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
 	if tokens[*i].kind != openBrace {
 		return result, errors.New("Didn't find opening brace in block")
 	}
+	result.start = tokens[*i].start
 	*i++
 
 	var content []Statement
@@ -294,6 +206,7 @@ func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
 		content = append(content, statement)
 	}
 	result.content = content
+	result.end = tokens[*i].end
 
 	return result, nil
 }
@@ -304,6 +217,7 @@ func parseFunctionDeclarationStatement(tokens []Token, i *int) (FunctionDeclarat
 	if tokens[*i].kind != keyword || string(tokens[*i].value) != "fn" {
 		return result, errors.New("Didn't find var keyword")
 	}
+	result.start = tokens[*i].start
 	*i++
 
 	if tokens[*i].kind != identifier {
@@ -333,63 +247,69 @@ func parseFunctionDeclarationStatement(tokens []Token, i *int) (FunctionDeclarat
 		return result, err
 	}
 	result.body = body
+	result.end = body.end
 
 	return result, nil
 }
 
 func parseAssignmentStatement(tokens []Token, i *int) (AssignmentStatement, error) {
+	result := AssignmentStatement{}
+
 	if tokens[*i].kind != identifier {
-		return AssignmentStatement{}, errors.New("didn't find any identifier in assignment statement")
+		return result, errors.New("didn't find any identifier in assignment statement")
 	}
-	id := tokens[*i].value
+	result.id = tokens[*i].value
+	result.start = tokens[*i].start
+
 	*i++
 
 	// check for the =
 	if tokens[*i].kind != equalSign {
-		return AssignmentStatement{}, errors.New("didn't find any = after the variable name")
+		return result, errors.New("didn't find any = after the variable name")
 	}
 	*i++
 
 	// now parse an expression
 	expression, err := parseExpression(tokens, i)
 	if err != nil {
-		return AssignmentStatement{}, err
+		return result, err
 	}
+	result.expr = expression
+	_, result.end = expression.getLocationOfExpression()
 
-	return AssignmentStatement{
-		id:   id,
-		expr: expression,
-	}, nil
+	return result, nil
 }
 
 func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclaration, error) {
+	result := VariableDeclaration{}
+
 	if tokens[*i].kind != keyword || string(tokens[*i].value) != "var" {
-		return VariableDeclaration{}, errors.New("Didn't find var keyword")
+		return result, errors.New("Didn't find var keyword")
 	}
+	result.start = tokens[*i].start
 	*i++
 
 	if tokens[*i].kind != identifier {
-		return VariableDeclaration{}, errors.New("didn't find any identifier after the var keyword")
+		return result, errors.New("didn't find any identifier after the var keyword")
 	}
-	id := tokens[*i].value
+	result.id = tokens[*i].value
 	*i++
 
 	// check for the =
 	if tokens[*i].kind != equalSign {
-		return VariableDeclaration{}, errors.New("didn't find any = after the declaration")
+		return result, errors.New("didn't find any = after the declaration")
 	}
 	*i++
 
 	// now parse an expression
 	expression, err := parseExpression(tokens, i)
 	if err != nil {
-		return VariableDeclaration{}, err
+		return result, err
 	}
+	result.expr = expression
+	result.end = tokens[*i].end
 
-	return VariableDeclaration{
-		id:   id,
-		expr: expression,
-	}, nil
+	return result, nil
 }
 
 func parseWhile(tokens []Token, i *int) (Statement, error) {
@@ -398,6 +318,7 @@ func parseWhile(tokens []Token, i *int) (Statement, error) {
 	if tokens[*i].kind != keyword || tokens[*i].value != "while" {
 		return result, errors.New("Expected while keyword at while statement")
 	}
+	result.start = tokens[*i].start
 	*i++
 
 	expression, err := parseExpression(tokens, i)
@@ -412,6 +333,7 @@ func parseWhile(tokens []Token, i *int) (Statement, error) {
 		return result, err
 	}
 	result.body = block
+	result.end = tokens[*i].end
 
 	return result, nil
 }
@@ -437,8 +359,8 @@ func parseStatement(tokens []Token, i *int) (Statement, error) {
 	return parseExpressionStatement(tokens, i)
 }
 
-func parse(source string) (Program, error) {
-	tokens := tokenize(source)
+func parse(source string, path string) (Program, error) {
+	tokens := tokenize(source, path)
 	i := 0
 
 	program := Program{}

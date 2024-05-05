@@ -13,6 +13,6 @@ fn printFibonacci(limit) {
 }
 
 fn main() {
-    printFibonacci(1000000)
+    printFibonacci(100000000)
 }
 

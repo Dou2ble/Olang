@@ -178,8 +178,8 @@ func compileStatement(statement Statement) (string, error) {
 }
 
 // import "fmt"
-func compile(source string) (string, error) {
-	ast, err := parse(source)
+func compile(source string, path string) (string, error) {
+	ast, err := parse(source, path)
 
 	if err != nil {
 		return "", err

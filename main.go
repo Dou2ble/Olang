@@ -20,20 +20,20 @@ func main() {
 	source := string(sourceRaw)
 
 	// tokenize
-	tokens := tokenize(source)
+	tokens := tokenize(source, "source.oc")
 	for _, token := range tokens {
 		fmt.Println(token)
 	}
 
 	// parsing
-	ast, err := parse(source)
+	ast, err := parse(source, "source.oc")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 	}
 	fmt.Println(ast)
 
 	// compiling
-	cSource, err := compile(source)
+	cSource, err := compile(source, "source.oc")
 	if err != nil {
 		slog.Error(fmt.Sprint(err))
 		os.Exit(1)
