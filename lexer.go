@@ -81,7 +81,7 @@ func findLocation(source string, path string, index int) Location {
 
 }
 
-func tokenize(source string, path string) []Token {
+func tokenize(path string) []Token {
 	// fmt.Println(isIdentifiable('('))
 	var (
 		tokens []Token

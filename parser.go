@@ -3,7 +3,12 @@ package main
 import (
 	"errors"
 	"strconv"
+	"strings"
 )
+
+func myError(text string) error {
+	return errors.New(strings.ToLower(text))
+}
 
 func parseEmptyArrayLiteralExpression(tokens []Token, i *int) (EmptyArrayLiteralExpression, error) {
 	return EmptyArrayLiteralExpression{location: tokens[*i].start}, nil
@@ -13,7 +18,9 @@ func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpressi
 	result := StringLiteralExpression{}
 
 	if tokens[*i].kind != tokenKindString {
-		return result, errors.New("No string token found in string literal expression")
+		message := "Expected string token in string literal"
+		logCodeError(tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 
 	result.value = tokens[*i].value
@@ -359,8 +366,8 @@ func parseStatement(tokens []Token, i *int) (Statement, error) {
 	return parseExpressionStatement(tokens, i)
 }
 
-func parse(source string, path string) (Program, error) {
-	tokens := tokenize(source, path)
+func parse(path string) (Program, error) {
+	tokens := tokenize(path)
 	i := 0
 
 	program := Program{}
