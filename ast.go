@@ -109,6 +109,7 @@ func (s ExpressionStatement) getLocationOfStatement() (Location, Location) {
 type FunctionDeclaration struct {
 	id         string
 	parameters []string
+	returnType *string
 	body       BlockStatement
 	start      Location
 	end        Location
@@ -132,6 +133,7 @@ func (s IfStatement) getLocationOfStatement() (Location, Location) {
 
 type VariableDeclaration struct {
 	id    string
+	_type string
 	expr  Expression
 	start Location
 	end   Location

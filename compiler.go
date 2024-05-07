@@ -180,7 +180,11 @@ func compileStatement(statement Statement) (string, error) {
 // import "fmt"
 func compile(path string) (string, error) {
 	ast, err := parse(path)
+	if err != nil {
+		return "", err
+	}
 
+	err = check(path)
 	if err != nil {
 		return "", err
 	}

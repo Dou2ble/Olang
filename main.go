@@ -26,7 +26,7 @@ func main() {
 		fmt.Println(token)
 	}
 
-	logCodeError(tokens[0].start, tokens[0].end, "uwu")
+	fmt.Println(tokens[0].start, tokens[0].end)
 
 	// parsing
 	ast, err := parse("source.oc")

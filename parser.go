@@ -18,8 +18,8 @@ func parseStringLiteralExpression(tokens []Token, i *int) (StringLiteralExpressi
 	result := StringLiteralExpression{}
 
 	if tokens[*i].kind != tokenKindString {
-		message := "Expected string token in string literal"
-		logCodeError(tokens[*i].start, tokens[*i].end, message)
+		message := "Expected string token at string literal"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
 		return result, myError(message)
 	}
 
@@ -33,7 +33,9 @@ func parseBooleanLiteralExpression(tokens []Token, i *int) (BooleanLiteralExpres
 	result := BooleanLiteralExpression{}
 
 	if tokens[*i].kind != keyword {
-		return result, errors.New("No keyword token found in boolean literal expression")
+		message := "Expected keyword token at boolean literal"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 
 	if tokens[*i].value == "true" {
@@ -41,7 +43,9 @@ func parseBooleanLiteralExpression(tokens []Token, i *int) (BooleanLiteralExpres
 	} else if tokens[*i].value == "false" {
 		result.value = false
 	} else {
-		return result, errors.New("Keyword in boolean literal expression is not true or false")
+		message := "Expected true or false keyword at boolean literal"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 
 	result.start = tokens[*i].start
@@ -54,7 +58,9 @@ func parseIntegerLiteralExpression(tokens []Token, i *int) (IntegerLiteralExpres
 	result := IntegerLiteralExpression{}
 
 	if tokens[*i].kind != Integer {
-		return result, errors.New("No integer token found in integer literal expression")
+		message := "Expected integer token at integer literal"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 
 	num, err := strconv.ParseInt(tokens[*i].value, 10, 64)
@@ -73,14 +79,18 @@ func parseCallExpression(tokens []Token, i *int) (CallExpression, error) {
 	result := CallExpression{}
 
 	if tokens[*i].kind != identifier {
-		return result, errors.New("Expected identifier at call expression")
+		message := "Expected identifier token at call expression"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.callee = tokens[*i].value
 	result.start = tokens[*i].start
 	*i++
 
 	if tokens[*i].kind != openParentheses {
-		return result, errors.New("Expected identifier at call expression")
+		message := "Expected opening parentheses token at call expression"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	*i++
 
@@ -103,7 +113,9 @@ func parseIdentifierExpression(tokens []Token, i *int) (IdentifierExpression, er
 	result := IdentifierExpression{}
 
 	if tokens[*i].kind != identifier {
-		return result, errors.New("Expected identifier token at identifier expression")
+		message := "Expected identifier token at identifier expression"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.id = tokens[*i].value
 	result.start = tokens[*i].start
@@ -131,7 +143,9 @@ func parseExpression(tokens []Token, i *int) (Expression, error) {
 		return parseIdentifierExpression(tokens, i)
 	}
 
-	return StringLiteralExpression{}, errors.New("Failed to parse expression")
+	message := "Failed to parse expression"
+	logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+	return BooleanLiteralExpression{}, myError(message)
 }
 
 func parseExpressionStatement(tokens []Token, i *int) (ExpressionStatement, error) {
@@ -151,7 +165,9 @@ func parseIfStatement(tokens []Token, i *int) (IfStatement, error) {
 	result := IfStatement{}
 
 	if tokens[*i].kind != keyword || (tokens[*i].value != "if" && tokens[*i].value != "elif") {
-		return result, errors.New("Expected if keyword at if statement")
+		message := "Incorrect token value and or kind at if statement"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.start = tokens[*i].start
 	*i++
@@ -198,7 +214,9 @@ func parseBlockStatement(tokens []Token, i *int) (BlockStatement, error) {
 	result := BlockStatement{}
 
 	if tokens[*i].kind != openBrace {
-		return result, errors.New("Didn't find opening brace in block")
+		message := "Expected opening brace token at block statement"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.start = tokens[*i].start
 	*i++
@@ -222,32 +240,45 @@ func parseFunctionDeclarationStatement(tokens []Token, i *int) (FunctionDeclarat
 	result := FunctionDeclaration{}
 
 	if tokens[*i].kind != keyword || string(tokens[*i].value) != "fn" {
-		return result, errors.New("Didn't find var keyword")
+		message := "Expected fn keyword token at function declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.start = tokens[*i].start
 	*i++
 
 	if tokens[*i].kind != identifier {
-		return result, errors.New("Didn't find function ID")
+		message := "Expected identifier token at function declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.id = tokens[*i].value
 	*i++
 
 	if tokens[*i].kind != openParentheses {
-		return result, errors.New("Didn't find function ID")
+		message := "Expected opening parentheses token at function declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	*i++
 
 	var parameters []string
 	for ; tokens[*i].kind != closeParentheses; *i++ {
 		if tokens[*i].kind != identifier {
-			return result, errors.New("Parameter is not of token kind identifier")
+			message := "Expected identifier token at the function declaration's parameters"
+			logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+			return result, myError(message)
 		}
 
 		parameters = append(parameters, tokens[*i].value)
 	}
 	*i++
 	result.parameters = parameters
+
+	if tokens[*i].kind == _type {
+		result.returnType = &tokens[*i].value
+		*i++
+	}
 
 	body, err := parseBlockStatement(tokens, i)
 	if err != nil {
@@ -263,16 +294,19 @@ func parseAssignmentStatement(tokens []Token, i *int) (AssignmentStatement, erro
 	result := AssignmentStatement{}
 
 	if tokens[*i].kind != identifier {
-		return result, errors.New("didn't find any identifier in assignment statement")
+		message := "Expected identifier token at assignment"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.id = tokens[*i].value
 	result.start = tokens[*i].start
-
 	*i++
 
 	// check for the =
 	if tokens[*i].kind != equalSign {
-		return result, errors.New("didn't find any = after the variable name")
+		message := "Expected equal sign token at assignment"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	*i++
 
@@ -291,20 +325,34 @@ func parseVariableDeclarationStatement(tokens []Token, i *int) (VariableDeclarat
 	result := VariableDeclaration{}
 
 	if tokens[*i].kind != keyword || string(tokens[*i].value) != "var" {
-		return result, errors.New("Didn't find var keyword")
+		message := "Expected var keyword token at variable declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.start = tokens[*i].start
 	*i++
 
 	if tokens[*i].kind != identifier {
-		return result, errors.New("didn't find any identifier after the var keyword")
+		message := "Expected identifier token at variable declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.id = tokens[*i].value
 	*i++
 
+	if tokens[*i].kind != _type {
+		message := "Expected type token at variable declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
+	}
+	result._type = tokens[*i].value
+	*i++
+
 	// check for the =
 	if tokens[*i].kind != equalSign {
-		return result, errors.New("didn't find any = after the declaration")
+		message := "Expected equal sign token at variable declaration"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	*i++
 
@@ -323,7 +371,9 @@ func parseWhile(tokens []Token, i *int) (Statement, error) {
 	result := WhileStatement{}
 
 	if tokens[*i].kind != keyword || tokens[*i].value != "while" {
-		return result, errors.New("Expected while keyword at while statement")
+		message := "Expected while keyword token at while loop"
+		logCode(LevelError, tokens[*i].start, tokens[*i].end, message)
+		return result, myError(message)
 	}
 	result.start = tokens[*i].start
 	*i++
