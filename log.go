@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,10 @@ const (
 	LevelWarning
 	LevelError
 )
+
+func myError(text string) error {
+	return errors.New(strings.ToLower(text))
+}
 
 func log(level Level, message string) {
 	var (

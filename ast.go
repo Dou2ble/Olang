@@ -2,12 +2,14 @@ package main
 
 // Program
 type Program struct {
-	content []Statement
+	content   []Statement
+	functions []FunctionDeclaration
 }
 
 // Interfaces
 type Expression interface {
 	getLocationOfExpression() (Location, Location)
+	getType() Type
 }
 
 type Statement interface {
@@ -25,9 +27,14 @@ func (e BooleanLiteralExpression) getLocationOfExpression() (Location, Location)
 	return e.start, e.end
 }
 
+func (e BooleanLiteralExpression) getType() Type {
+	return newType("Bool")
+}
+
 type CallExpression struct {
 	callee    string
 	arguments []Expression
+	_type     Type
 	start     Location
 	end       Location
 }
@@ -37,6 +44,7 @@ func (e CallExpression) getLocationOfExpression() (Location, Location) {
 }
 
 type EmptyArrayLiteralExpression struct {
+	_type    Type
 	location Location
 }
 
@@ -46,6 +54,7 @@ func (e EmptyArrayLiteralExpression) getLocationOfExpression() (Location, Locati
 
 type IdentifierExpression struct {
 	id    string
+	_type Type
 	start Location
 	end   Location
 }
@@ -56,6 +65,7 @@ func (e IdentifierExpression) getLocationOfExpression() (Location, Location) {
 
 type IntegerLiteralExpression struct {
 	value int64
+	_type Type
 	start Location
 	end   Location
 }
@@ -66,6 +76,7 @@ func (e IntegerLiteralExpression) getLocationOfExpression() (Location, Location)
 
 type StringLiteralExpression struct {
 	value string
+	_type Type
 	start Location
 	end   Location
 }
@@ -108,7 +119,7 @@ func (s ExpressionStatement) getLocationOfStatement() (Location, Location) {
 
 type FunctionDeclaration struct {
 	id         string
-	parameters []string
+	parameters []Parameter
 	returnType *string
 	body       BlockStatement
 	start      Location
@@ -133,7 +144,7 @@ func (s IfStatement) getLocationOfStatement() (Location, Location) {
 
 type VariableDeclaration struct {
 	id    string
-	_type string
+	_type Type
 	expr  Expression
 	start Location
 	end   Location
@@ -152,4 +163,22 @@ type WhileStatement struct {
 
 func (s WhileStatement) getLocationOfStatement() (Location, Location) {
 	return s.start, s.end
+}
+
+// misc
+type Parameter struct {
+	id    string
+	_type Type
+	start Location
+	end   Location
+}
+
+type Type struct {
+	id string
+}
+
+func newType(id string) Type {
+	return Type{
+		id: id,
+	}
 }
