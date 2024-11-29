@@ -1,7 +1,6 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "slog.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -39,17 +38,17 @@ typedef struct {
 } ConditionalExpression;
 
 typedef enum {
-  BINOP_PLUS,                     // +
-  BINOP_MINUS,                    // -
-  BINOP_MULTIPLICATION,           // *
-  BINOP_DIVISION,                 // /
-  BINOP_MODULUS,                  // %
-  BINOP_IS_EQUAL,                 // ==
-  BINOP_IS_NOT_EQUAL,             // !=
-  BINOP_IS_GREATER_THAN,          // >
-  BINOP_IS_LESS_THAN,             // <
+  BINOP_PLUS, // +
+  BINOP_MINUS, // -
+  BINOP_MULTIPLICATION, // *
+  BINOP_DIVISION, // /
+  BINOP_MODULUS, // %
+  BINOP_IS_EQUAL, // ==
+  BINOP_IS_NOT_EQUAL, // !=
+  BINOP_IS_GREATER_THAN, // >
+  BINOP_IS_LESS_THAN, // <
   BINOP_IS_GREATER_THAN_OR_EQUAL, // >=
-  BINOP_IS_LESS_THAN_OR_EQUAL,    // <=
+  BINOP_IS_LESS_THAN_OR_EQUAL, // <=
 } BinaryOperator;
 
 typedef struct BinaryExpression {
@@ -83,12 +82,11 @@ typedef struct {
 
 typedef struct {
   char *id;
-  Expression *expression;
+  Expression *expression; 
 } AssignmentExpression;
 
 struct Expression {
   ExpressionType type;
-  Region region;
   union {
     int64_t intVal;
     char *string;
@@ -110,7 +108,7 @@ typedef struct {
   Expression *expressions;
 } Program;
 
-Program parse(char *source);
+Program parse(const char *source);
 void printAst(const Program statement);
 
 #endif // !PARSER_H

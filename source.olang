@@ -1,26 +1,5 @@
-[]
-[]
-[]
-arsoiearsnton arstoi arnsot 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[]
-
-rastarst
-arstoiarstar
-st
-arstoiarstar
-
-
+let value = 0
+while value < 10 {
+    value = value + 1
+}
+return value

@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 # Source files
-SRCS = lexer.c parser.c olang.c interpreter.c value.c environment.c utils.c slog.c
+SRCS = lexer.c parser.c olang.c interpreter.c value.c environment.c utils.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)
@@ -20,7 +20,7 @@ all: $(TARGET)
 
 # Rule to link object files to create the executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ -lm
+	$(CC) $(CFLAGS) -o $@ $^
 
 # Rule to compile source files into object files
 %.o: %.c lexer.h
