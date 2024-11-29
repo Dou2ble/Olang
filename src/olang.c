@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include "lexer.h"
 #include "parser.h"
+#include "slog.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -29,6 +30,7 @@ char *readSource() {
 }
 
 int main() {
+  // slog(ERROR, "uwu");
   char *source = readSource();
 
   Program ast = parse(source);

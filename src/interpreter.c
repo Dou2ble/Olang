@@ -125,6 +125,7 @@ Value evalBinary(Environment *env, BinaryExpression expression) {
 
       newStringValue(result);
     }
+    break;
     // comparative
   case BINOP_IS_EQUAL:
     if (left.type == VALUE_INT && right.type == VALUE_INT) {

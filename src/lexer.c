@@ -1,4 +1,6 @@
 #include "lexer.h"
+#include "slog.h"
+// #include "log.h"
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdbool.h>
@@ -19,8 +21,10 @@ Token *tokenize(size_t *tokenCount, const char *source) {
 
   // loop over the source string
   size_t c = 0;
+  Token token;
+  Region region;
   while (c < strlen(source)) {
-    Token token;
+    region.start = c;
 
     // skip whitespace
     if (isspace(source[c])) {
@@ -48,7 +52,7 @@ Token *tokenize(size_t *tokenCount, const char *source) {
       if (source[c + 1] == '=') {
         simpleToken = TOKEN_IS_EQUAL;
         c++;
-      } 
+      }
       break;
 
       // Arithmetic token
@@ -75,7 +79,7 @@ Token *tokenize(size_t *tokenCount, const char *source) {
     case '%':
       simpleToken = TOKEN_MODULUS;
       break;
-    
+
     // comparitive tokens
     case '!':
       if (source[c + 1] == '=') {
@@ -99,7 +103,9 @@ Token *tokenize(size_t *tokenCount, const char *source) {
     // if it dose not have it's default value we know that we have found one of
     // our simple tokens so we will need to append it to the token array
     if (simpleToken != TOKEN_IDENTIFIER) {
+      region.end = c;
       token.type = simpleToken;
+      token.region = region;
       appendToken(tokenCount, &tokens, token);
       c++;
       continue;
@@ -123,6 +129,8 @@ Token *tokenize(size_t *tokenCount, const char *source) {
         token.value.string = newString;
       }
 
+      region.end = c;
+      token.region = region;
       appendToken(tokenCount, &tokens, token);
       c++;
       continue;
@@ -145,6 +153,9 @@ Token *tokenize(size_t *tokenCount, const char *source) {
         newString[oldStringLength] = source[c];
         token.value.identifier = newString;
       }
+
+      region.end = c;
+      token.region = region;
 
       if (strcmp(token.value.identifier, "mut") == 0) {
         token.type = TOKEN_KEYWORD_MUT;
@@ -210,11 +221,19 @@ Token *tokenize(size_t *tokenCount, const char *source) {
         token.value.intVal *= -1;
       }
 
+      region.end = c;
+      token.region = region;
+
       appendToken(tokenCount, &tokens, token);
       continue;
     }
 
-    printf("SKIP\n");
+    // slogLocation(LEVEL_ERROR, STAGE_LEXING, source, iToLocation(source, c),
+    // "skip");
+    char buffer[46];
+    sprintf(buffer, "Unexpected character found during lexing: %c", source[c]);
+    slogLocation(source, c, ERROR, buffer);
+    exit(1);
     c++;
   }
 

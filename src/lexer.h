@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "slog.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -50,12 +51,12 @@ typedef enum {
   TOKEN_INCREMENT,      // ++
   TOKEN_DECREMENT,      // --
 
-  TOKEN_IS_EQUAL, // ==
-  TOKEN_IS_NOT_EQUAL, // !=
-  TOKEN_IS_GREATER_THAN, // >
-  TOKEN_IS_LESS_THAN, // <
+  TOKEN_IS_EQUAL,                 // ==
+  TOKEN_IS_NOT_EQUAL,             // !=
+  TOKEN_IS_GREATER_THAN,          // >
+  TOKEN_IS_LESS_THAN,             // <
   TOKEN_IS_GREATER_THAN_OR_EQUAL, // >=
-  TOKEN_IS_LESS_THAN_OR_EQUAL, // <=
+  TOKEN_IS_LESS_THAN_OR_EQUAL,    // <=
 
   // Keywords
   TOKEN_KEYWORD_RETUN, // return
@@ -78,6 +79,7 @@ typedef enum {
 } TokenType;
 
 typedef struct {
+  Region region;
   TokenType type;
   union {
     int64_t intVal;

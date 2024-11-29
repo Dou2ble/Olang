@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "lexer.h"
+#include "src/slog.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -7,79 +8,83 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-size_t tokenCount;
-Token *tokens;
-size_t t;
+typedef struct {
+  char *source;
+  size_t tokenCount;
+  Token *tokens;
+  size_t t;
+} Parser;
+
+void expectToken(Parser *parser, TokenType type) {
+  if (parser->tokens[parser->t].type != type) {
+    // slog("Expected int token in int expression");
+    slogRegion(parser->source, parser->tokens[parser->t].region, ERROR,
+               "Unexpected token found during parsing");
+    exit(1);
+  }
+}
 
 // Forward declaration of parseExpression
-Expression parseExpression();
+Expression parseExpression(Parser *parser);
 
-int64_t parseInt() {
+int64_t parseInt(Parser *parser) {
   int64_t expression;
-  if (tokens[t].type != TOKEN_INT) {
-    perror("Expected int token in int expression");
-    exit(1);
-  }
-  expression = tokens[t].value.intVal;
-  t++;
+  expectToken(parser, TOKEN_INT);
+  expression = parser->tokens[parser->t].value.intVal;
+  parser->t++;
 
   return expression;
 }
 
-char *parseString() {
+char *parseString(Parser *parser) {
   char *expression;
-  if (tokens[t].type != TOKEN_STRING) {
-    perror("Expected int token in int expression");
-    exit(1);
-  }
-
-  expression = tokens[t].value.string;
-  t++;
+  expectToken(parser, TOKEN_STRING);
+  expression = parser->tokens[parser->t].value.string;
+  parser->t++;
 
   return expression;
 }
 
-Expression parsePrimary() {
+Expression parsePrimary(Parser *parser) {
   Expression expression;
-  switch (tokens[t].type) {
+  switch (parser->tokens[parser->t].type) {
   case TOKEN_INT:
     expression.type = EXPRESSION_INT;
-    expression.value.intVal = parseInt();
+    expression.value.intVal = parseInt(parser);
     break;
   case TOKEN_STRING:
     expression.type = EXPRESSION_STRING;
-    expression.value.string = parseString();
+    expression.value.string = parseString(parser);
     break;
   case TOKEN_BOOL:
     expression.type = EXPRESSION_BOOL;
-    expression.value.boolean = tokens[t].value.boolean;
-    t++;
+    expression.value.boolean = parser->tokens[parser->t].value.boolean;
+    parser->t++;
     break;
   case TOKEN_OPEN_PAREN:
-    t++;
-    expression = parseExpression();
-    if (tokens[t].type != TOKEN_CLOSE_PAREN) {
-      printf("Expected closing parenthesis");
-    }
-    t++;
+    parser->t++;
+    expression = parseExpression(parser);
+    expectToken(parser, TOKEN_CLOSE_PAREN);
+    parser->t++;
     break;
   default:
     perror("unexpected token while parsing expression");
-    printToken(tokens[t]);
+    slogRegion(parser->source, parser->tokens[parser->t].region, ERROR,
+               "Unexpected token found while parsing expression");
     exit(1);
   }
 
   return expression;
 }
 
-Expression parseMultiplicative() {
-  Expression left = parsePrimary();
+Expression parseMultiplicative(Parser *parser) {
+  Expression left = parsePrimary(parser);
 
-  while (tokens[t].type == TOKEN_DIVISION ||
-         tokens[t].type == TOKEN_MULTIPLICATION ||
-         tokens[t].type == TOKEN_MODULUS) {
+  while (parser->tokens[parser->t].type == TOKEN_DIVISION ||
+         parser->tokens[parser->t].type == TOKEN_MULTIPLICATION ||
+         parser->tokens[parser->t].type == TOKEN_MODULUS) {
     BinaryOperator op;
-    switch (tokens[t].type) {
+    switch (parser->tokens[parser->t].type) {
     case TOKEN_DIVISION:
       op = BINOP_DIVISION;
       break;
@@ -92,8 +97,8 @@ Expression parseMultiplicative() {
     default:
       abort();
     }
-    t++;
-    Expression right = parsePrimary();
+    parser->t++;
+    Expression right = parsePrimary(parser);
 
     Expression newLeft;
     newLeft.type = EXPRESSION_BINARY;
@@ -109,12 +114,13 @@ Expression parseMultiplicative() {
   return left;
 }
 
-Expression parseAdditive() {
-  Expression left = parseMultiplicative();
+Expression parseAdditive(Parser *parser) {
+  Expression left = parseMultiplicative(parser);
 
-  while (tokens[t].type == TOKEN_PLUS || tokens[t].type == TOKEN_MINUS) {
+  while (parser->tokens[parser->t].type == TOKEN_PLUS ||
+         parser->tokens[parser->t].type == TOKEN_MINUS) {
     BinaryOperator op;
-    switch (tokens[t].type) {
+    switch (parser->tokens[parser->t].type) {
     case TOKEN_PLUS:
       op = BINOP_PLUS;
       break;
@@ -124,8 +130,8 @@ Expression parseAdditive() {
     default:
       abort();
     }
-    t++;
-    Expression right = parseMultiplicative();
+    parser->t++;
+    Expression right = parseMultiplicative(parser);
 
     Expression newLeft;
     newLeft.type = EXPRESSION_BINARY;
@@ -141,17 +147,17 @@ Expression parseAdditive() {
   return left;
 }
 
-Expression parseComparitive() {
-  Expression left = parseAdditive();
+Expression parseComparitive(Parser *parser) {
+  Expression left = parseAdditive(parser);
 
-  while (tokens[t].type == TOKEN_IS_EQUAL ||
-         tokens[t].type == TOKEN_IS_NOT_EQUAL ||
-         tokens[t].type == TOKEN_IS_GREATER_THAN ||
-         tokens[t].type == TOKEN_IS_GREATER_THAN_OR_EQUAL ||
-         tokens[t].type == TOKEN_IS_LESS_THAN ||
-         tokens[t].type == TOKEN_IS_LESS_THAN_OR_EQUAL) {
+  while (parser->tokens[parser->t].type == TOKEN_IS_EQUAL ||
+         parser->tokens[parser->t].type == TOKEN_IS_NOT_EQUAL ||
+         parser->tokens[parser->t].type == TOKEN_IS_GREATER_THAN ||
+         parser->tokens[parser->t].type == TOKEN_IS_GREATER_THAN_OR_EQUAL ||
+         parser->tokens[parser->t].type == TOKEN_IS_LESS_THAN ||
+         parser->tokens[parser->t].type == TOKEN_IS_LESS_THAN_OR_EQUAL) {
     BinaryOperator op;
-    switch (tokens[t].type) {
+    switch (parser->tokens[parser->t].type) {
     case TOKEN_IS_EQUAL:
       op = BINOP_IS_EQUAL;
       break;
@@ -173,8 +179,8 @@ Expression parseComparitive() {
     default:
       abort();
     }
-    t++;
-    Expression right = parseAdditive();
+    parser->t++;
+    Expression right = parseAdditive(parser);
 
     Expression newLeft;
     newLeft.type = EXPRESSION_BINARY;
@@ -190,9 +196,9 @@ Expression parseComparitive() {
   return left;
 }
 
-ConditionalExpression parseConditional() {
+ConditionalExpression parseConditional(Parser *parser) {
   ConditionalExpression expression;
-  switch (tokens[t].type) {
+  switch (parser->tokens[parser->t].type) {
   case TOKEN_KEYWORD_IF:
     expression.type = CONDITIONAL_IF;
     break;
@@ -203,127 +209,111 @@ ConditionalExpression parseConditional() {
     expression.type = CONDITIONAL_FOR;
     break;
   default:
-    perror("Unexpected token at start of conditional");
+    slogRegion(parser->source, parser->tokens[parser->t].region, ERROR,
+               "Unexpected token at start of conditional expression");
     exit(1);
   }
-  t++;
+  parser->t++;
 
   if (expression.type == CONDITIONAL_FOR) {
     expression.init = malloc(sizeof(Expression));
-    *expression.init = parseExpression();
+    *expression.init = parseExpression(parser);
   } else {
     expression.init = NULL;
   }
   expression.test = malloc(sizeof(Expression));
-  *expression.test = parseExpression();
+  *expression.test = parseExpression(parser);
   if (expression.type == CONDITIONAL_FOR) {
     expression.update = malloc(sizeof(Expression));
-    *expression.update = parseExpression();
+    *expression.update = parseExpression(parser);
   } else {
     expression.update = NULL;
   }
 
   expression.body = malloc(sizeof(Expression));
-  *expression.body = parseExpression();
+  *expression.body = parseExpression(parser);
 
   return expression;
 }
 
-BlockExpression parseBlock() {
+BlockExpression parseBlock(Parser *parser) {
   BlockExpression expression;
   expression.expressionCount = 0;
   expression.expressions = NULL;
 
-  if (tokens[t].type != TOKEN_OPEN_BRACE) {
-    perror("Expected { at start of block statement");
-    exit(1);
-  }
-  t++;
+  expectToken(parser, TOKEN_OPEN_BRACE);
+  parser->t++;
 
-  while (tokens[t].type != TOKEN_CLOSE_BRACE) {
+  while (parser->tokens[parser->t].type != TOKEN_CLOSE_BRACE) {
     // make the statements array longer
     expression.expressionCount++;
     expression.expressions =
         realloc(expression.expressions,
                 sizeof(Expression) * expression.expressionCount);
-    expression.expressions[expression.expressionCount - 1] = parseExpression();
+    expression.expressions[expression.expressionCount - 1] =
+        parseExpression(parser);
   }
 
-  if (tokens[t].type != TOKEN_CLOSE_BRACE) {
-    perror("Expected } at start of block statement");
-    exit(1);
-  }
-  t++;
+  expectToken(parser, TOKEN_CLOSE_BRACE);
+  parser->t++;
 
   return expression;
 }
 
-char *parseIdentifier() {
+char *parseIdentifier(Parser *parser) {
   char *expression;
 
-  if (tokens[t].type != TOKEN_IDENTIFIER) {
-    perror("Expected identifier token at identifier expression");
-    exit(1);
-  }
-  expression = tokens[t].value.identifier;
-  t++;
+  expectToken(parser, TOKEN_IDENTIFIER);
+  expression = parser->tokens[parser->t].value.identifier;
+  parser->t++;
 
   return expression;
 }
 
-CallExpression parseCall() {
+CallExpression parseCall(Parser *parser) {
   CallExpression expression;
 
-  if (tokens[t].type != TOKEN_IDENTIFIER) {
-    perror("Expected identifier token at call expression");
-    exit(1);
-  }
-  expression.callee = tokens[t].value.identifier;
-  t++;
+  expectToken(parser, TOKEN_IDENTIFIER);
+  expression.callee = parser->tokens[parser->t].value.identifier;
+  parser->t++;
 
-  if (tokens[t].type != TOKEN_OPEN_PAREN) {
-    perror("Expected ( token at call expression");
-    exit(1);
-  }
-  t++;
+  expectToken(parser, TOKEN_OPEN_PAREN);
+  parser->t++;
 
   expression.arguments = NULL;
   expression.argumentsCount = 0;
 
-  while (tokens[t].type != TOKEN_CLOSE_PAREN) {
+  while (parser->tokens[parser->t].type != TOKEN_CLOSE_PAREN) {
     expression.argumentsCount++;
 
     expression.arguments = realloc(
         expression.arguments, sizeof(Expression) * expression.argumentsCount);
-    expression.arguments[expression.argumentsCount - 1] = parseExpression();
+    expression.arguments[expression.argumentsCount - 1] =
+        parseExpression(parser);
   }
 
   // skip the close paren
-  t++;
+  parser->t++;
 
   return expression;
 }
 
-FunctionExpression parseFunction() {
+FunctionExpression parseFunction(Parser *parser) {
   FunctionExpression expression;
 
-  if (tokens[t].type != TOKEN_KEYWORD_FUN) {
-    perror("Expected fun keyword at start of function expression");
-    exit(1);
-  }
-  t++;
+  expectToken(parser, TOKEN_KEYWORD_FUN);
+  parser->t++;
 
-  if (tokens[t].type != TOKEN_OPEN_PAREN) {
-    perror("Expected ( token at start of function expression");
-    exit(1);
-  }
-  t++;
+  expectToken(parser, TOKEN_OPEN_PAREN);
+  parser->t++;
 
   expression.parameters = NULL;
   expression.parameterCount = 0;
-  while (tokens[t].type != TOKEN_CLOSE_PAREN) {
-    if (tokens[t].type != TOKEN_IDENTIFIER) {
-      perror("Expected identifier token as parameter");
+  while (parser->tokens[parser->t].type != TOKEN_CLOSE_PAREN) {
+    if (parser->tokens[parser->t].type != TOKEN_IDENTIFIER) {
+      slogRegion(
+          parser->source, parser->tokens[parser->t].region, ERROR,
+          "Expected identifier token as parameter in function expression");
       exit(1);
     }
     expression.parameterCount++;
@@ -331,36 +321,33 @@ FunctionExpression parseFunction() {
     expression.parameters = realloc(expression.parameters,
                                     sizeof(char *) * expression.parameterCount);
     expression.parameters[expression.parameterCount - 1] =
-        tokens[t].value.identifier;
+        parser->tokens[parser->t].value.identifier;
 
-    t++;
+    parser->t++;
   }
 
   // skip the close paren
-  t++;
+  parser->t++;
 
   expression.body = malloc(sizeof(Expression));
-  *expression.body = parseExpression();
+  *expression.body = parseExpression(parser);
   return expression;
 }
 
-Expression *parseReturn() {
+Expression *parseReturn(Parser *parser) {
   Expression *returnVal = malloc(sizeof(Expression));
 
-  if (tokens[t].type != TOKEN_KEYWORD_RETUN) {
-    perror("Expected return keyword in return statement");
-    exit(1);
-  }
-  t++;
+  expectToken(parser, TOKEN_KEYWORD_RETUN);
+  parser->t++;
 
-  *returnVal = parseExpression();
+  *returnVal = parseExpression(parser);
   return returnVal;
 }
 
-VariableDeclarationExpression parseVaraibleDeclaration() {
+VariableDeclarationExpression parseVaraibleDeclaration(Parser *parser) {
   VariableDeclarationExpression expression;
 
-  switch (tokens[t].type) {
+  switch (parser->tokens[parser->t].type) {
   case TOKEN_KEYWORD_LET:
     expression.isMutable = false;
     break;
@@ -372,116 +359,107 @@ VariableDeclarationExpression parseVaraibleDeclaration() {
            "mut keyword token)");
     exit(1);
   }
-  t++;
+  parser->t++;
 
-  if (tokens[t].type != TOKEN_IDENTIFIER) {
-    perror("Expected identifier at variable declaration");
-  }
-  expression.id = tokens[t].value.identifier;
-  t++;
+  expectToken(parser, TOKEN_IDENTIFIER);
+  expression.id = parser->tokens[parser->t].value.identifier;
+  parser->t++;
 
-  if (tokens[t].type != TOKEN_EQUAL_SIGN) {
-    perror("Expected equal sign at variable declaration");
-  }
-  t++;
+  expectToken(parser, TOKEN_EQUAL_SIGN);
+  parser->t++;
 
   expression.expression = malloc(sizeof(Expression));
-  *expression.expression = parseExpression();
+  *expression.expression = parseExpression(parser);
 
   return expression;
 }
 
-AssignmentExpression parseAssignment() {
+AssignmentExpression parseAssignment(Parser *parser) {
   AssignmentExpression expression;
 
-  if (tokens[t].type != TOKEN_IDENTIFIER) {
-    perror("Expected identifier at start of variable assignmeent");
-  }
-  expression.id = tokens[t].value.identifier;
-  t++;
+  expectToken(parser, TOKEN_IDENTIFIER);
+  expression.id = parser->tokens[parser->t].value.identifier;
+  parser->t++;
 
-  if (tokens[t].type != TOKEN_EQUAL_SIGN) {
-    perror("Expected = at variable assignmeent");
-  }
-  t++;
+  expectToken(parser, TOKEN_EQUAL_SIGN);
+  parser->t++;
 
   expression.expression = malloc(sizeof(Expression));
-  *expression.expression = parseExpression();
+  *expression.expression = parseExpression(parser);
 
   return expression;
 }
 
-Expression parseExpression() {
+Expression parseExpression(Parser *parser) {
   Expression expression;
+  expression.region.start = parser->tokens[parser->t].region.start;
 
-  switch (tokens[t].type) {
+  switch (parser->tokens[parser->t].type) {
   case TOKEN_OPEN_BRACE:
     expression.type = EXPRESSION_BLOCK;
-    expression.value.block = parseBlock();
+    expression.value.block = parseBlock(parser);
     break;
   case TOKEN_KEYWORD_FUN:
     expression.type = EXPRESSION_FUNCTION;
-    expression.value.function = parseFunction();
+    expression.value.function = parseFunction(parser);
     break;
   case TOKEN_IDENTIFIER:
     // if the token after the identifier is an ( it is a function call,
     // example: print()
-    if (t < tokenCount - 2) {
-      if (tokens[(t) + 1].type == TOKEN_OPEN_PAREN) {
+    if (parser->t < parser->tokenCount - 2) {
+      if (parser->tokens[(parser->t) + 1].type == TOKEN_OPEN_PAREN) {
         expression.type = EXPRESSION_CALL;
-        expression.value.call = parseCall();
-      } else if (tokens[(t) + 1].type == TOKEN_EQUAL_SIGN) {
+        expression.value.call = parseCall(parser);
+      } else if (parser->tokens[(parser->t) + 1].type == TOKEN_EQUAL_SIGN) {
         expression.type = EXPRESSION_ASSIGNMENT;
-        expression.value.assignment = parseAssignment();
+        expression.value.assignment = parseAssignment(parser);
       }
     } else {
       expression.type = EXPRESSION_IDENTIFIER;
-      expression.value.identifier = parseIdentifier();
+      expression.value.identifier = parseIdentifier(parser);
     }
     break;
   case TOKEN_KEYWORD_RETUN:
     expression.type = EXPRESSION_RETURN;
-    expression.value.returnVal = parseReturn();
+    expression.value.returnVal = parseReturn(parser);
     break;
   case TOKEN_KEYWORD_IF:
   case TOKEN_KEYWORD_WHILE:
   case TOKEN_KEYWORD_FOR:
     expression.type = EXPRESSION_CONDITIONAL;
-    expression.value.conditional = parseConditional();
+    expression.value.conditional = parseConditional(parser);
     break;
   case TOKEN_KEYWORD_LET:
   case TOKEN_KEYWORD_MUT:
     expression.type = EXPRESSION_VARIABLE_DECLARATION;
-    expression.value.variableDeclaration = parseVaraibleDeclaration();
+    expression.value.variableDeclaration = parseVaraibleDeclaration(parser);
     break;
   default:
-    expression = parseComparitive();
+    expression = parseComparitive(parser);
   }
 
+  expression.region.end = parser->tokens[parser->t].region.end;
   return expression;
 }
 
-Program parse(const char *source) {
+Program parse(char *source) {
   Program ast;
   ast.expressionCount = 0;
   ast.expressions = NULL;
 
-  tokens = tokenize(&tokenCount, source);
-  t = 0;
+  Parser parser;
+  parser.source = source;
+  parser.tokens = tokenize(&parser.tokenCount, source);
+  parser.t = 0;
 
   // Parse the ast
-  while (t < tokenCount) {
+  while (parser.t < parser.tokenCount) {
     // make the statements array longer
     ast.expressionCount++;
     ast.expressions =
         realloc(ast.expressions, sizeof(Expression) * ast.expressionCount);
-    ast.expressions[ast.expressionCount - 1] = parseExpression();
+    ast.expressions[ast.expressionCount - 1] = parseExpression(&parser);
   }
-
-  // this will not free all of the strings that tokenize() has allocated on
-  // the heap but that is intended since these strings are also in the ast and
-  // will be needed during evaluation free(tokens);
-  tokens = NULL;
 
   return ast;
 };
@@ -545,6 +523,18 @@ void printExpression(const Expression expression) {
     printExpression(*expression.value.binary.left);
     printf(" ");
     switch (expression.value.binary.op) {
+    case BINOP_IS_LESS_THAN:
+      printf("<");
+      break;
+    case BINOP_IS_LESS_THAN_OR_EQUAL:
+      printf("<=");
+      break;
+    case BINOP_IS_GREATER_THAN:
+      printf(">");
+      break;
+    case BINOP_IS_GREATER_THAN_OR_EQUAL:
+      printf(">=");
+      break;
     case BINOP_DIVISION:
       printf("/");
       break;
