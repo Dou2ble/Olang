@@ -10,9 +10,9 @@ typedef struct {
   size_t end;
 } Region;
 
-void slogLocation(const char *source, size_t location, SlogLevel level,
+void slogLocation(char *source, size_t location, SlogLevel level,
                   char *message);
-void slogRegion(const char *source, Region region, SlogLevel level,
+void slogRegion(char *source, Region region, SlogLevel level,
                 char *message);
 void slog(SlogLevel level, char *message);
 

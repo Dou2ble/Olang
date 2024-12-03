@@ -1,6 +1,6 @@
 #include "parser.h"
 #include "lexer.h"
-#include "src/slog.h"
+#include "slog.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -14,6 +14,8 @@ typedef struct {
   Token *tokens;
   size_t t;
 } Parser;
+
+void printExpression(const Expression expression);
 
 void expectToken(Parser *parser, TokenType type) {
   if (parser->tokens[parser->t].type != type) {
@@ -196,46 +198,6 @@ Expression parseComparitive(Parser *parser) {
   return left;
 }
 
-ConditionalExpression parseConditional(Parser *parser) {
-  ConditionalExpression expression;
-  switch (parser->tokens[parser->t].type) {
-  case TOKEN_KEYWORD_IF:
-    expression.type = CONDITIONAL_IF;
-    break;
-  case TOKEN_KEYWORD_WHILE:
-    expression.type = CONDITIONAL_WHILE;
-    break;
-  case TOKEN_KEYWORD_FOR:
-    expression.type = CONDITIONAL_FOR;
-    break;
-  default:
-    slogRegion(parser->source, parser->tokens[parser->t].region, ERROR,
-               "Unexpected token at start of conditional expression");
-    exit(1);
-  }
-  parser->t++;
-
-  if (expression.type == CONDITIONAL_FOR) {
-    expression.init = malloc(sizeof(Expression));
-    *expression.init = parseExpression(parser);
-  } else {
-    expression.init = NULL;
-  }
-  expression.test = malloc(sizeof(Expression));
-  *expression.test = parseExpression(parser);
-  if (expression.type == CONDITIONAL_FOR) {
-    expression.update = malloc(sizeof(Expression));
-    *expression.update = parseExpression(parser);
-  } else {
-    expression.update = NULL;
-  }
-
-  expression.body = malloc(sizeof(Expression));
-  *expression.body = parseExpression(parser);
-
-  return expression;
-}
-
 BlockExpression parseBlock(Parser *parser) {
   BlockExpression expression;
   expression.expressionCount = 0;
@@ -252,10 +214,59 @@ BlockExpression parseBlock(Parser *parser) {
                 sizeof(Expression) * expression.expressionCount);
     expression.expressions[expression.expressionCount - 1] =
         parseExpression(parser);
+    printf("length: %zu\n", expression.expressionCount);
+    slogRegion(parser->source, parser->tokens[parser->t].region, WARNING,
+               "uwu");
   }
 
-  expectToken(parser, TOKEN_CLOSE_BRACE);
+  // skip the closing brace
   parser->t++;
+
+  return expression;
+}
+
+IfExpression parseIf(Parser *parser) {
+  IfExpression expression;
+
+  expectToken(parser, TOKEN_KEYWORD_IF);
+  parser->t++;
+
+  expression.test = malloc(sizeof(Expression));
+  *expression.test = parseExpression(parser);
+
+  expression.body = parseBlock(parser);
+
+  return expression;
+}
+
+WhileLoopExpression parseWhileLoop(Parser *parser) {
+  WhileLoopExpression expression;
+
+  expectToken(parser, TOKEN_KEYWORD_WHILE);
+  parser->t++;
+
+  expression.test = malloc(sizeof(Expression));
+  *expression.test = parseExpression(parser);
+
+  expression.body = parseBlock(parser);
+
+  return expression;
+}
+
+ForLoopExpression parseForLoop(Parser *parser) {
+  ForLoopExpression expression;
+
+  expectToken(parser, TOKEN_KEYWORD_FOR);
+  parser->t++;
+
+  expression.init = malloc(sizeof(Expression));
+  *expression.init = parseExpression(parser);
+  expression.test = malloc(sizeof(Expression));
+  *expression.test = parseExpression(parser);
+  expression.update = malloc(sizeof(Expression));
+  *expression.update = parseExpression(parser);
+
+  expression.body = parseBlock(parser);
 
   return expression;
 }
@@ -310,12 +321,7 @@ FunctionExpression parseFunction(Parser *parser) {
   expression.parameters = NULL;
   expression.parameterCount = 0;
   while (parser->tokens[parser->t].type != TOKEN_CLOSE_PAREN) {
-    if (parser->tokens[parser->t].type != TOKEN_IDENTIFIER) {
-      slogRegion(
-          parser->source, parser->tokens[parser->t].region, ERROR,
-          "Expected identifier token as parameter in function expression");
-      exit(1);
-    }
+    expectToken(parser, TOKEN_IDENTIFIER);
     expression.parameterCount++;
 
     expression.parameters = realloc(expression.parameters,
@@ -329,8 +335,7 @@ FunctionExpression parseFunction(Parser *parser) {
   // skip the close paren
   parser->t++;
 
-  expression.body = malloc(sizeof(Expression));
-  *expression.body = parseExpression(parser);
+  expression.body = parseBlock(parser);
   return expression;
 }
 
@@ -424,10 +429,16 @@ Expression parseExpression(Parser *parser) {
     expression.value.returnVal = parseReturn(parser);
     break;
   case TOKEN_KEYWORD_IF:
+    expression.type = EXPRESSION_IF;
+    expression.value.ifExpression = parseIf(parser);
+    break;
   case TOKEN_KEYWORD_WHILE:
+    expression.type = EXPRESSION_WHILE_LOOP;
+    expression.value.whileLoop = parseWhileLoop(parser);
+    break;
   case TOKEN_KEYWORD_FOR:
-    expression.type = EXPRESSION_CONDITIONAL;
-    expression.value.conditional = parseConditional(parser);
+    expression.type = EXPRESSION_FOR_LOOP;
+    expression.value.forLoop = parseForLoop(parser);
     break;
   case TOKEN_KEYWORD_LET:
   case TOKEN_KEYWORD_MUT:
@@ -483,7 +494,12 @@ void printExpression(const Expression expression) {
     for (size_t p = 0; p < expression.value.function.parameterCount; p++) {
       printf("%s ", expression.value.function.parameters[p]);
     }
-    printExpression(*expression.value.function.body);
+
+    Expression functionBody;
+    functionBody.type = EXPRESSION_BLOCK;
+    functionBody.value.block = expression.value.function.body;
+    printExpression(functionBody);
+
     printf(")");
     break;
   case EXPRESSION_RETURN:
@@ -568,33 +584,45 @@ void printExpression(const Expression expression) {
       printf("bool(false)");
     }
     break;
-  case EXPRESSION_CONDITIONAL:
-    printf("conditional(");
-    switch (expression.value.conditional.type) {
-    case CONDITIONAL_FOR:
-      printf("for");
-      break;
-    case CONDITIONAL_WHILE:
-      printf("while");
-      break;
-    case CONDITIONAL_IF:
-      printf("if");
-      break;
-    }
+  case EXPRESSION_IF:
+    printf("if(test=");
+    printExpression(*expression.value.ifExpression.test);
+    printf(" ");
 
-    if (expression.value.conditional.type == CONDITIONAL_FOR) {
-      printf(" init=");
-      printExpression(*expression.value.conditional.init);
-    }
+    Expression ifBody;
+    ifBody.type = EXPRESSION_BLOCK;
+    ifBody.value.block = expression.value.ifExpression.body;
+    printExpression(ifBody);
+
+    printf(")");
+    break;
+  case EXPRESSION_WHILE_LOOP:
+    printf("while(test=");
+    printExpression(*expression.value.whileLoop.test);
+    printf(" ");
+
+    Expression whileBody;
+    whileBody.type = EXPRESSION_BLOCK;
+    whileBody.value.block = expression.value.whileLoop.body;
+    printExpression(whileBody);
+
+    printf(")");
+    break;
+  case EXPRESSION_FOR_LOOP:
+    printf("for(init=");
+    printExpression(*expression.value.forLoop.init);
+    printf(" ");
     printf(" test=");
-    printExpression(*expression.value.conditional.test);
-    if (expression.value.conditional.type == CONDITIONAL_FOR) {
-      printf(" update=");
-      printExpression(*expression.value.conditional.update);
-    }
+    printExpression(*expression.value.forLoop.test);
+    printf(" update=");
+    printExpression(*expression.value.forLoop.update);
 
-    printf(" body=");
-    printExpression(*expression.value.conditional.body);
+    printf(" ");
+    Expression forBody;
+    forBody.type = EXPRESSION_BLOCK;
+    forBody.value.block = expression.value.forLoop.body;
+    printExpression(forBody);
+
     printf(")");
     break;
   }

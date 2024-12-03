@@ -15,7 +15,7 @@ void appendToken(size_t *tokenCount, Token **tokens, const Token newToken) {
   (*tokens)[(*tokenCount) - 1] = newToken;
 }
 
-Token *tokenize(size_t *tokenCount, const char *source) {
+Token *tokenize(size_t *tokenCount, char *source) {
   Token *tokens = NULL;
   *tokenCount = 0;
 
@@ -154,7 +154,7 @@ Token *tokenize(size_t *tokenCount, const char *source) {
         token.value.identifier = newString;
       }
 
-      region.end = c;
+      region.end = c - 1;
       token.region = region;
 
       if (strcmp(token.value.identifier, "mut") == 0) {

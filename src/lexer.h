@@ -89,7 +89,7 @@ typedef struct {
   } value;
 } Token;
 
-Token *tokenize(size_t *tokenCount, const char *source);
+Token *tokenize(size_t *tokenCount, char *source);
 void printTokens(const Token *tokens, const size_t tokenCount);
 void printToken(const Token token);
 

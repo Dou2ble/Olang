@@ -47,7 +47,7 @@ void printBlankLineHeader(int rowNumberWidth) {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-void slogLocation(const char *source, size_t location, SlogLevel level,
+void slogLocation(char *source, size_t location, SlogLevel level,
                   char *message) {
   size_t row, col;
   getLocationRowCol(location, source, &row, &col);
@@ -86,7 +86,7 @@ void slogLocation(const char *source, size_t location, SlogLevel level,
   printf("^\n\n");
 }
 
-void slogRegion(const char *source, Region region, SlogLevel level,
+void slogRegion(char *source, Region region, SlogLevel level,
                 char *message) {
   if (region.start == region.end) {
     slogLocation(source, region.start, level, message);

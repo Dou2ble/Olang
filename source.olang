@@ -1,26 +1,16 @@
-[]
-[]
-[]
-arsoiearsnton arstoi arnsot 
+for 1 2 3 {
+    print("hello")
+}
 
+while true {
+    print("hello")
+}
 
+if true {
+    print("hello")
+}
 
-
-
-
-
-
-
-
-
-
-
-
-[]
-
-rastarst
-arstoiarstar
-st
-arstoiarstar
-
-
+let myFun = fun(a) {
+    print("My value is: ")
+    print(a)
+}

@@ -1,5 +1,3 @@
-#include "interpreter.h"
-#include "lexer.h"
 #include "parser.h"
 #include "slog.h"
 #include <stdio.h>
@@ -36,6 +34,6 @@ int main() {
   Program ast = parse(source);
   printAst(ast);
 
-  return eval(source);
+  // return eval(source);
   return 0;
 }

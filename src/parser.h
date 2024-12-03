@@ -19,24 +19,34 @@ typedef enum {
   EXPRESSION_RETURN,
   EXPRESSION_VARIABLE_DECLARATION,
   EXPRESSION_BINARY,
-  EXPRESSION_CONDITIONAL,
+  EXPRESSION_FOR_LOOP,
+  EXPRESSION_WHILE_LOOP,
+  EXPRESSION_IF,
   EXPRESSION_BOOL,
-  EXPRESSION_ASSIGNMENT
+  EXPRESSION_ASSIGNMENT,
 } ExpressionType;
 
-typedef enum {
-  CONDITIONAL_IF,
-  CONDITIONAL_FOR,
-  CONDITIONAL_WHILE
-} ConditionalType;
+typedef struct BlockExpression {
+  size_t expressionCount;
+  Expression *expressions;
+} BlockExpression;
 
 typedef struct {
-  ConditionalType type;
   Expression *init; // used by for loop
   Expression *test;
   Expression *update; // used by for loop
-  Expression *body;
-} ConditionalExpression;
+  BlockExpression body;
+} ForLoopExpression;
+
+typedef struct {
+  Expression *test;
+  BlockExpression body;
+} WhileLoopExpression;
+
+typedef struct {
+  Expression *test;
+  BlockExpression body;
+} IfExpression;
 
 typedef enum {
   BINOP_PLUS,                     // +
@@ -59,14 +69,9 @@ typedef struct BinaryExpression {
 } BinaryExpression;
 
 typedef struct {
-  size_t expressionCount;
-  Expression *expressions;
-} BlockExpression;
-
-typedef struct {
   char **parameters;
   size_t parameterCount;
-  Expression *body;
+  BlockExpression body;
 } FunctionExpression;
 
 typedef struct {
@@ -99,7 +104,9 @@ struct Expression {
     Expression *returnVal;
     VariableDeclarationExpression variableDeclaration;
     BinaryExpression binary;
-    ConditionalExpression conditional;
+    ForLoopExpression forLoop;
+    WhileLoopExpression whileLoop;
+    IfExpression ifExpression;
     AssignmentExpression assignment;
     bool boolean;
   } value;
