@@ -245,68 +245,69 @@ Token *tokenize(size_t *tokenCount, char *source) {
 //   }
 // }
 //
-void printToken(const Token token) {
-  switch (token.type) {
-  case TOKEN_INT:
-    printf("int");
-    break;
-  case TOKEN_STRING:
-    printf("string");
-    break;
-  case TOKEN_IDENTIFIER:
-    printf("identifier");
-    break;
-  case TOKEN_OPEN_PAREN:
-    printf("open paren (");
-    break;
-  case TOKEN_CLOSE_PAREN:
-    printf("close paren )");
-    break;
-  case TOKEN_OPEN_BRACE:
-    printf("open brace {");
-    break;
-  case TOKEN_CLOSE_BRACE:
-    printf("close brace }");
-    break;
-  case TOKEN_EQUAL_SIGN:
-    printf("equal sign =");
-    break;
-  case TOKEN_KEYWORD_RETUN:
-    printf("return keyword");
-    break;
-  case TOKEN_KEYWORD_LET:
-    printf("let keyword");
-    break;
-  case TOKEN_KEYWORD_MUT:
-    printf("mut keyword");
-    break;
-  case TOKEN_KEYWORD_FUN:
-    printf("fun keyword");
-    break;
-  }
 
-  printf(" --- ");
+// void printToken(const Token token) {
+//   switch (token.type) {
+//   case TOKEN_INT:
+//     printf("int");
+//     break;
+//   case TOKEN_STRING:
+//     printf("string");
+//     break;
+//   case TOKEN_IDENTIFIER:
+//     printf("identifier");
+//     break;
+//   case TOKEN_OPEN_PAREN:
+//     printf("open paren (");
+//     break;
+//   case TOKEN_CLOSE_PAREN:
+//     printf("close paren )");
+//     break;
+//   case TOKEN_OPEN_BRACE:
+//     printf("open brace {");
+//     break;
+//   case TOKEN_CLOSE_BRACE:
+//     printf("close brace }");
+//     break;
+//   case TOKEN_EQUAL_SIGN:
+//     printf("equal sign =");
+//     break;
+//   case TOKEN_KEYWORD_RETUN:
+//     printf("return keyword");
+//     break;
+//   case TOKEN_KEYWORD_LET:
+//     printf("let keyword");
+//     break;
+//   case TOKEN_KEYWORD_MUT:
+//     printf("mut keyword");
+//     break;
+//   case TOKEN_KEYWORD_FUN:
+//     printf("fun keyword");
+//     break;
+//   }
 
-  // to find which kind of value it is we need to check the kind
-  switch (token.type) {
-  case TOKEN_INT:
-    printf("%" PRId64, token.value.intVal);
-    break;
-  case TOKEN_STRING:
-    printf("%s", token.value.string);
-    break;
-  case TOKEN_IDENTIFIER:
-    printf("%s", token.value.identifier);
-    break;
-  default:
-    printf("none");
-  }
+//   printf(" --- ");
 
-  printf("\n");
-}
+//   // to find which kind of value it is we need to check the kind
+//   switch (token.type) {
+//   case TOKEN_INT:
+//     printf("%" PRId64, token.value.intVal);
+//     break;
+//   case TOKEN_STRING:
+//     printf("%s", token.value.string);
+//     break;
+//   case TOKEN_IDENTIFIER:
+//     printf("%s", token.value.identifier);
+//     break;
+//   default:
+//     printf("none");
+//   }
 
-void printTokens(const Token *tokens, const size_t tokenCount) {
-  for (size_t i = 0; i < tokenCount; i++) {
-    printToken(tokens[i]);
-  }
-}
+//   printf("\n");
+// }
+
+// void printTokens(const Token *tokens, const size_t tokenCount) {
+//   for (size_t i = 0; i < tokenCount; i++) {
+//     printToken(tokens[i]);
+//   }
+// }
