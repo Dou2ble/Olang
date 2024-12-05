@@ -215,8 +215,6 @@ BlockExpression parseBlock(Parser *parser) {
     expression.expressions[expression.expressionCount - 1] =
         parseExpression(parser);
     printf("length: %zu\n", expression.expressionCount);
-    slogRegion(parser->source, parser->tokens[parser->t].region, WARNING,
-               "uwu");
   }
 
   // skip the closing brace
@@ -418,6 +416,9 @@ Expression parseExpression(Parser *parser) {
       } else if (parser->tokens[(parser->t) + 1].type == TOKEN_EQUAL_SIGN) {
         expression.type = EXPRESSION_ASSIGNMENT;
         expression.value.assignment = parseAssignment(parser);
+      } else {
+        expression.type = EXPRESSION_IDENTIFIER;
+        expression.value.identifier = parseIdentifier(parser);
       }
     } else {
       expression.type = EXPRESSION_IDENTIFIER;

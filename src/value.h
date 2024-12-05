@@ -2,7 +2,7 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include "src/parser.h"
+#include "parser.h"
 #include <stdbool.h>
 #include <stdint.h>
 
